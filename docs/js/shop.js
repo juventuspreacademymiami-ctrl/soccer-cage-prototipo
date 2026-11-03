@@ -59,6 +59,7 @@ const Shop = {
     const heroKey = I18N.has('store.' + st.id + '.title') ? 'store.' + st.id : 'store.generic';
     const cats = this.navCats();
     const pickupLabel = this.pickupLabel();
+    // El aviso de "vista previa" (catálogo importado, stock de ejemplo) solo aplica a la demo local.
 
     root.style.cssText = UI.brandVars(st);
     root.innerHTML = `
@@ -74,7 +75,7 @@ const Shop = {
           </button>`).join('')}
       </div>`}
 
-      ${!st.active ? `
+      ${!st.active && !Store.cloudMode ? `
       <div class="alert alert-info">
         ${UI.infoIcon()}
         <div>
