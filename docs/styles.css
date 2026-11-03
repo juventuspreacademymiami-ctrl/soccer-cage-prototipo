@@ -1659,22 +1659,58 @@ table.data tr.sub-row td { padding-top: 5px; padding-bottom: 5px; background: va
 .store-tab-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .store-tab-name { overflow-wrap: anywhere; line-height: 1.3; }
 
-/* Franja de la tienda: compacta, para que el producto entre en la primera pantalla */
-.sf-band {
-  display: grid; grid-template-columns: auto 1fr auto; gap: var(--s5); align-items: center;
-  background: var(--white); border: 1px solid var(--border); border-radius: var(--r-lg);
-  border-top: 4px solid var(--brand, var(--ink-900));
-  padding: var(--s5) var(--s6); margin-bottom: var(--s4);
+/* Portada de la tienda: el color de la marca con el texto y, al lado, el kit.
+   Con foto de portada, la foto ocupa todo y el texto va encima. */
+.sf-hero {
+  position: relative; overflow: hidden; isolation: isolate;
+  display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  min-height: 380px; border-radius: var(--r-lg); margin-bottom: var(--s4);
+  background: var(--brand, var(--ink-900)); color: var(--brand-ink, var(--white));
 }
-.sf-eyebrow {
-  font-size: 11px; letter-spacing: .12em; text-transform: uppercase; font-weight: 750;
-  color: var(--ink-400);
+.sf-hero-text {
+  position: relative; z-index: 2; min-width: 0;
+  padding: var(--s9) var(--s8); display: flex; flex-direction: column; justify-content: center;
 }
-.sf-band h1 { font-size: 26px; letter-spacing: -.025em; margin-top: 2px; line-height: 1.15; }
-.sf-band p { margin-top: 4px; color: var(--ink-500); font-size: 14px; max-width: 560px; line-height: 1.5; }
-.sf-perks { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 12.5px; color: var(--ink-600); }
-.sf-perks li { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
-.sf-perks .ico { width: 16px; height: 16px; color: var(--brand, var(--ink-900)); flex-shrink: 0; }
+.sf-hero-brand {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 11.5px; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; opacity: .86;
+}
+.sf-hero-brand .store-mark { box-shadow: 0 0 0 1px rgba(255,255,255,.28); }
+.sf-hero h1 {
+  font-size: clamp(32px, 3.2vw, 44px); line-height: 1.06; letter-spacing: -.035em; font-weight: 760;
+  margin-top: var(--s5); color: inherit; max-width: 560px;
+}
+.sf-hero p { margin-top: var(--s4); font-size: 16px; line-height: 1.55; max-width: 470px; opacity: .82; }
+.sf-hero-actions { display: flex; gap: var(--s3); flex-wrap: wrap; margin-top: var(--s7); }
+.sf-hero-cta { background: var(--brand-ink, var(--white)); border-color: var(--brand-ink, var(--white)); color: var(--brand, var(--ink-900)); font-weight: 680; }
+.sf-hero-cta:hover { background: var(--brand-ink, var(--white)); border-color: var(--brand-ink, var(--white)); filter: brightness(.92); }
+.sf-hero-alt { background: transparent; border-color: currentColor; color: inherit; font-weight: 620; }
+.sf-hero-alt:hover { background: rgba(127,127,127,.16); border-color: currentColor; }
+.sf-hero-art { display: grid; place-items: center; padding: var(--s7); min-width: 0; }
+.sf-hero-art .jersey, .sf-hero-art svg { width: auto; height: 76%; max-width: 86%; filter: drop-shadow(0 14px 28px rgba(11,12,14,.22)); }
+.sf-hero-art .p-photo { width: 100%; height: 100%; max-height: 340px; object-fit: contain; }
+
+.sf-hero.has-cover { grid-template-columns: 1fr; min-height: 440px; background: var(--ink-900); color: var(--white); }
+.sf-hero-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+.sf-hero.has-cover::before {
+  content: ""; position: absolute; inset: 0; z-index: 1;
+  background: linear-gradient(90deg, rgba(11,12,14,.8) 0%, rgba(11,12,14,.5) 55%, rgba(11,12,14,.12) 100%);
+}
+.sf-hero.has-cover .sf-hero-text { max-width: 660px; }
+.sf-hero.has-cover .sf-hero-cta { background: var(--white); border-color: var(--white); color: var(--ink-900); }
+
+/* Beneficios bajo la portada */
+.sf-perks {
+  list-style: none; margin: 0 0 var(--s8); padding: 0;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: var(--s3);
+}
+.sf-perks li {
+  display: flex; align-items: center; gap: 12px; min-width: 0;
+  background: var(--white); border: 1px solid var(--border); border-radius: var(--r-md); padding: 14px 16px;
+}
+.sf-perks .ico { width: 22px; height: 22px; color: var(--brand, var(--ink-900)); flex-shrink: 0; }
+.sf-perks b { display: block; font-size: 13.5px; font-weight: 650; color: var(--ink-900); line-height: 1.3; }
+.sf-perks small { display: block; font-size: 12px; color: var(--ink-500); margin-top: 2px; line-height: 1.35; }
 
 /* Menú de la tienda */
 .sf-nav {
@@ -1757,13 +1793,62 @@ table.data tr.sub-row td { padding-top: 5px; padding-bottom: 5px; background: va
 .p-info .p-price { font-size: 17px; margin-top: 6px; }
 .p-info .p-sizes { margin-top: 8px; }
 
+/* Cómo funciona y preguntas frecuentes */
+.sf-help {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: var(--s8);
+  background: var(--white); border: 1px solid var(--border); border-radius: var(--r-lg); padding: var(--s7);
+}
+.sf-help h2 { font-size: 20px; letter-spacing: -.02em; margin-bottom: var(--s5); }
+.sf-steps ol { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s5); }
+.sf-steps li { display: flex; gap: var(--s3); align-items: flex-start; }
+.sf-step-n {
+  width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0; display: grid; place-items: center;
+  background: var(--brand, var(--ink-900)); color: var(--brand-ink, var(--white)); font-weight: 750; font-size: 13px;
+}
+.sf-steps b { font-size: 14.5px; color: var(--ink-900); font-weight: 650; }
+.sf-steps p { margin: 2px 0 0; color: var(--ink-500); font-size: 13.5px; line-height: 1.5; }
+.sf-faq details { border-top: 1px solid var(--border); }
+.sf-faq details:last-child { border-bottom: 1px solid var(--border); }
+.sf-faq summary {
+  cursor: pointer; list-style: none; position: relative;
+  padding: 14px 32px 14px 0; font-weight: 620; font-size: 14.5px; color: var(--ink-900);
+}
+.sf-faq summary::-webkit-details-marker { display: none; }
+.sf-faq summary::after {
+  content: "+"; position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  font-size: 20px; font-weight: 400; color: var(--ink-400);
+}
+.sf-faq details[open] summary::after { content: "\2212"; }
+.sf-faq summary:focus-visible { outline: 2px solid var(--gold-500); outline-offset: 2px; }
+.sf-faq details p { margin: 0 0 14px; color: var(--ink-500); font-size: 13.5px; line-height: 1.6; }
+
+/* Foto de portada en el formulario de la tienda */
+.store-cover-preview {
+  height: 120px; border-radius: var(--r-md); overflow: hidden;
+  background: var(--surface-sunken); border: 1px dashed var(--border-strong);
+  display: grid; place-items: center; text-align: center; padding: 0;
+}
+.store-cover-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.store-cover-preview .muted { padding: var(--s3); }
+.store-cover-actions { display: flex; gap: var(--s2); margin-top: var(--s2); }
+
+/* Pie de la tienda */
+.sf-footer {
+  margin-top: var(--s8); padding-top: var(--s6); border-top: 1px solid var(--border);
+  display: flex; flex-direction: column; align-items: center; gap: var(--s3);
+}
+.sf-footer-brand { display: flex; align-items: center; gap: 10px; font-weight: 650; font-size: 13.5px; color: var(--ink-800); }
+
 /* Campos del jugador en el kit */
 .kit-player { margin-bottom: var(--s4); }
 .kit-player .field { margin-bottom: var(--s3); }
 
 @media (max-width: 900px) {
-  .sf-band { grid-template-columns: auto 1fr; }
-  .sf-perks { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px 16px; }
+  .sf-hero { grid-template-columns: 1fr; min-height: 0; }
+  .sf-hero-text { padding: var(--s8) var(--s7) var(--s6); }
+  .sf-hero-art { height: 240px; padding: var(--s5); }
+  .sf-hero.has-cover { min-height: 400px; }
+  .sf-help { grid-template-columns: 1fr; }
   .kit-grid.single .kit-card { grid-template-columns: 1fr; }
   .kit-grid.single .kit-media { min-height: 0; height: auto; aspect-ratio: 16 / 10; }
   .kit-grid.single .kit-info { padding: var(--s5); }
@@ -1772,11 +1857,18 @@ table.data tr.sub-row td { padding-top: 5px; padding-bottom: 5px; background: va
   .acct-btn .label { display: none; }
   .acct-btn { padding: 6px; }
   .store-tabs { grid-template-columns: 1fr; }
-  .sf-band { padding: var(--s4); gap: var(--s3); margin-bottom: var(--s2); }
-  .sf-band .store-mark { width: 44px !important; height: 44px !important; }
-  .sf-band h1 { font-size: 19px; }
-  .sf-band p { display: none; }
-  .sf-perks { font-size: 12px; gap: 4px 12px; }
+  .sf-hero-text { padding: var(--s7) var(--s5) var(--s6); }
+  .sf-hero h1 { font-size: 30px; margin-top: var(--s4); }
+  .sf-hero p { font-size: 14.5px; }
+  .sf-hero-actions { margin-top: var(--s5); }
+  .sf-hero-actions .btn { flex: 1 1 100%; }
+  .sf-hero-art { display: none; }
+  .sf-hero.has-cover { min-height: 0; }
+  .sf-hero.has-cover::before { background: linear-gradient(180deg, rgba(11,12,14,.35) 0%, rgba(11,12,14,.82) 100%); }
+  .sf-hero.has-cover .sf-hero-text { padding-top: 160px; }
+  .sf-perks { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s2); margin-bottom: var(--s7); }
+  .sf-perks li { flex-direction: column; align-items: flex-start; gap: 8px; padding: 12px; }
+  .sf-help { padding: var(--s5); gap: var(--s6); }
   .sf-nav { gap: var(--s4); margin-bottom: var(--s4); }
   .sf-singles-head { flex-direction: column; align-items: stretch; }
   .sf-singles-head .shop-toolbar { flex-wrap: wrap; }

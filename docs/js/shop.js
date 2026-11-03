@@ -56,6 +56,8 @@ const Shop = {
     }
 
     const kits = this.kits();
+    const singles = this.singles();
+    const perk = (icon, title, sub) => `<li>${UI.icon(icon)}<span><b>${UI.esc(title)}</b><small>${UI.esc(sub)}</small></span></li>`;
     const heroKey = I18N.has('store.' + st.id + '.title') ? 'store.' + st.id : 'store.generic';
     const cats = this.navCats();
     const pickupLabel = this.pickupLabel();
@@ -83,19 +85,26 @@ const Shop = {
         </div>
       </div>` : ''}
 
-      <section class="sf-band">
-        ${UI.storeMark(st, 64)}
-        <div class="sf-band-text">
-          <div class="sf-eyebrow">${UI.esc(st.name)} · ${I18N.t('shop.official')}</div>
+      <section class="sf-hero ${st.cover ? 'has-cover' : ''}">
+        ${st.cover ? `<img class="sf-hero-img" src="${UI.esc(st.cover)}" alt="">` : ''}
+        <div class="sf-hero-text">
+          <div class="sf-hero-brand">${UI.storeMark(st, 34)}<span>${UI.esc(st.name)} · ${I18N.t('shop.official')}</span></div>
           <h1>${UI.esc(st.headline || I18N.t(heroKey + '.title'))}</h1>
           <p>${UI.esc(st.blurb || I18N.t(heroKey + '.body'))}</p>
+          <div class="sf-hero-actions">
+            ${kits.length ? `<button class="btn btn-lg sf-hero-cta" data-go="shopKits">${I18N.t(st.kitRequired ? 'shop.heroBuyKit' : 'shop.heroKits')}</button>` : ''}
+            ${singles.length ? `<button class="btn btn-lg sf-hero-alt" data-go="shopSingles">${I18N.t('shop.heroSingles')}</button>` : ''}
+          </div>
         </div>
-        <ul class="sf-perks">
-          ${st.pickup ? `<li>${UI.icon('pin')}<span>${UI.esc(pickupLabel)} · <b>${I18N.t('shop.factPickupV')}</b></span></li>` : ''}
-          ${st.shipping ? `<li>${UI.icon('truck')}<span>${I18N.t('shop.perkShip')}</span></li>` : ''}
-          <li>${UI.icon('card')}<span>${I18N.t('shop.perkPay')}</span></li>
-        </ul>
+        ${!st.cover && kits.length ? `<div class="sf-hero-art" aria-hidden="true" style="background:${UI.mediaBg()}">${UI.media(kits[0])}</div>` : ''}
       </section>
+
+      <ul class="sf-perks">
+        ${st.pickup ? perk('pin', pickupLabel, I18N.t('shop.perkPickupSub')) : ''}
+        ${st.shipping ? perk('truck', I18N.t('shop.perkShip'), I18N.t('shop.perkShipSub')) : ''}
+        ${perk('lock', I18N.t('shop.perkPayT'), I18N.t('shop.perkPaySub'))}
+        ${kits.length ? perk('shirt', I18N.t('shop.perkSizesT'), I18N.t('shop.perkSizesSub')) : ''}
+      </ul>
 
       ${cats.length < 2 ? '' : `<nav class="sf-nav" aria-label="${I18N.t('shop.navAria')}">
         ${kits.length ? `<button class="sf-nav-link" data-go="shopKits">${I18N.t(st.kitRequired ? 'shop.navKitRequired' : 'shop.navKits')}</button>` : ''}
@@ -139,7 +148,12 @@ const Shop = {
         <div class="product-grid" id="shopGrid"></div>
       </section>
 
-      <p class="shop-foot muted tiny">${I18N.t('shop.footNote', { tax: UI.pct(st.taxRate) })}</p>`;
+      ${this.helpHTML(kits.length > 0)}
+
+      <footer class="sf-footer">
+        <div class="sf-footer-brand">${UI.storeMark(st, 28)}<span>${UI.esc(st.name)}</span></div>
+        <p class="shop-foot muted tiny">${I18N.t('shop.footNote', { tax: UI.pct(st.taxRate) })}</p>
+      </footer>`;
 
     root.querySelectorAll('[data-store]').forEach(b => b.onclick = () => this.setStore(b.dataset.store));
 
@@ -160,6 +174,40 @@ const Shop = {
     this.renderAccount();
     this.renderKits();
     this.renderGrid();
+  },
+
+  /** Cómo funciona y preguntas frecuentes: lo que un papá pregunta antes de comprar.
+      Solo afirma lo que la tienda hace de verdad (entrega, pago, kit, tallas);
+      la política de cambios va aparte cuando esté escrita. */
+  helpHTML(hasKits) {
+    const st = this.store;
+    const where = I18N.t('shop.pickupWhere.' + (I18N.has('shop.pickupWhere.' + st.id) ? st.id : 'generic'));
+    const gate = st.kitRequired && hasKits;
+    const how = st.pickup && st.shipping ? 'both' : st.pickup ? 'pickup' : 'ship';
+    const steps = [
+      [I18N.t(hasKits ? 'shop.step1Kit' : 'shop.step1'), I18N.t(hasKits ? 'shop.step1KitSub' : 'shop.step1Sub')],
+      [I18N.t('shop.step2'), I18N.t('shop.step2Sub')],
+      [I18N.t('shop.step3'), I18N.t('shop.step3Sub.' + how, { where })]
+    ];
+    const faq = [
+      gate ? ['shop.faqKitQ', 'shop.faqKitA', {}] : null,
+      hasKits ? ['shop.faqSizesQ', 'shop.faqSizesA', {}] : null,
+      ['shop.faqDeliveryQ', 'shop.faqDeliveryA.' + how, { where }],
+      ['shop.faqPayQ', 'shop.faqPayA', { tax: UI.pct(st.taxRate) }]
+    ].filter(Boolean);
+    return `
+      <section class="shop-section sf-help">
+        <div class="sf-steps">
+          <h2>${I18N.t('shop.howTitle')}</h2>
+          <ol>
+            ${steps.map(([t, d], i) => `<li><span class="sf-step-n">${i + 1}</span><div><b>${UI.esc(t)}</b><p>${UI.esc(d)}</p></div></li>`).join('')}
+          </ol>
+        </div>
+        <div class="sf-faq">
+          <h2>${I18N.t('shop.faqTitle')}</h2>
+          ${faq.map(([q, a, v]) => `<details><summary>${I18N.t(q)}</summary><p>${UI.esc(I18N.t(a, v))}</p></details>`).join('')}
+        </div>
+      </section>`;
   },
 
   /** Categorías con productos sueltos en esta tienda (para el menú). */
@@ -426,7 +474,7 @@ const Shop = {
 
       const sizes = p.variants.length === 1 && p.variants[0].size === 'U'
         ? I18N.t('size.one')
-        : p.variants.map(v => `<span class="sz ${Store.available(v) > 0 ? '' : 'off'}">${UI.esc(v.size)}</span>`).join('');
+        : p.variants.filter(v => Store.available(v) > 0).map(v => `<span class="sz">${UI.esc(v.size)}</span>`).join('');
 
       return `
         <article class="p-card" data-id="${p.id}" tabindex="0" role="button" aria-label="${I18N.t('shop.viewProduct', { name: UI.esc(p.name) })}">

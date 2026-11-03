@@ -320,7 +320,12 @@ const scenarios = {
     const page = await newPage(browser, { viewport: { width: 1366, height: 900 } });
     await page.goto(BASE);
     await page.waitForSelector('.kit-card');
-    ok(await page.locator('.sf-band').count() === 1 && await page.locator('.sf-nav').count() === 0, 'Summer Camp abre con la franja de marca, sin menú de una sola sección');
+    ok(await page.locator('.sf-hero').count() === 1 && await page.locator('.sf-nav').count() === 0, 'Summer Camp abre con la franja de marca, sin menú de una sola sección');
+    ok(await page.locator('.sf-hero-cta').count() === 1 && await page.locator('.sf-perks li').count() === 4 && await page.locator('.sf-faq details').count() === 4,
+      'portada con botón de compra, 4 beneficios y 4 preguntas frecuentes');
+    await page.click('.sf-hero-cta');
+    await page.waitForTimeout(700);
+    ok(await page.evaluate(() => { const r = document.getElementById('shopKits').getBoundingClientRect(); return r.top < innerHeight / 2; }), '«Comprar el kit» lleva al kit');
     ok(await page.locator('.kit-card .sz-pick').count() > 0, 'las tallas del kit se ven sin abrirlo');
 
     // 1) Kit: nombre y año de nacimiento son obligatorios

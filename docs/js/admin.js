@@ -955,14 +955,14 @@ const Admin = {
   /** Reduce la foto a 600 px: basta para la tienda y no llena el almacenamiento. */
   /** Reduce la foto en el navegador (600 px, JPEG). Con base compartida la sube al
       almacenamiento y devuelve su enlace; si la subida falla, se queda en los datos. */
-  readImage(file, cb, folder) {
+  readImage(file, cb, folder, maxPx) {
     const r = new FileReader();
     r.onerror = () => cb(null);
     r.onload = () => {
       const img = new Image();
       img.onerror = () => cb(null);
       img.onload = () => {
-        const k = Math.min(1, 600 / Math.max(img.width, img.height));
+        const k = Math.min(1, (maxPx || 600) / Math.max(img.width, img.height));
         const c = document.createElement('canvas');
         c.width = Math.round(img.width * k);
         c.height = Math.round(img.height * k);
@@ -2511,6 +2511,7 @@ const Admin = {
     const s = id ? Store.storeCfg(id) : null;
     const d = this.storeDraft = {
       logo: s ? s.logo : null,
+      cover: s ? s.cover || null : null,
       brand: s ? s.brand || '#111111' : SEED.brandPalette[Store.stores.length % SEED.brandPalette.length]
     };
     const v = (k, def) => s ? s[k] : def;
@@ -2548,6 +2549,15 @@ const Admin = {
               <label for="sfBlurb">${I18N.t('adm.stores.blurb')}</label>
               <textarea class="input" id="sfBlurb" rows="3" maxlength="300" placeholder="${UI.esc(I18N.t((s && I18N.has('store.' + s.id + '.body') ? 'store.' + s.id : 'store.generic') + '.body'))}">${UI.esc(v('blurb', '') || '')}</textarea>
               <div class="hint">${I18N.t('adm.stores.textsHint')}</div>
+            </div>
+            <div class="field">
+              <label>${I18N.t('adm.stores.cover')}</label>
+              <div class="store-cover-preview" id="sfCoverPreview"></div>
+              <div class="store-cover-actions">
+                <label class="btn btn-sm pf-upload">${I18N.t('adm.stores.uploadCover')}<input type="file" id="sfCover" accept="image/*" hidden></label>
+                <button class="btn btn-sm btn-ghost" id="sfCoverClear" type="button">${I18N.t('adm.pf.removeImage')}</button>
+              </div>
+              <div class="hint">${I18N.t('adm.stores.coverHint')}</div>
             </div>
             <div class="field">
               <label>${I18N.t('adm.stores.brand')}</label>
@@ -2601,6 +2611,10 @@ const Admin = {
       const name = document.getElementById('sfName').value || '?';
       document.getElementById('sfLogoPreview').innerHTML = UI.storeMark({ name, brand: d.brand, logo: d.logo }, 96);
       document.getElementById('sfLogoClear').style.display = d.logo ? '' : 'none';
+      document.getElementById('sfCoverPreview').innerHTML = d.cover
+        ? `<img src="${UI.esc(d.cover)}" alt="">`
+        : `<span class="muted tiny">${I18N.t('adm.stores.coverNone')}</span>`;
+      document.getElementById('sfCoverClear').style.display = d.cover ? '' : 'none';
       document.querySelectorAll('#sfSwatches .swatch').forEach(b => b.classList.toggle('sel', b.dataset.color.toLowerCase() === d.brand.toLowerCase()));
     };
     preview();
@@ -2617,6 +2631,16 @@ const Admin = {
       }, 'tiendas');
     };
     document.getElementById('sfLogoClear').onclick = () => { d.logo = null; preview(); };
+    document.getElementById('sfCover').onchange = e => {
+      const f = e.target.files[0];
+      if (!f) return;
+      this.readImage(f, data => {
+        if (!data) { UI.toast('danger', I18N.t('adm.pf.imageErr'), I18N.t('adm.pf.imageErrBody')); return; }
+        d.cover = data;
+        preview();
+      }, 'tiendas', 1800);
+    };
+    document.getElementById('sfCoverClear').onclick = () => { d.cover = null; preview(); };
 
     document.getElementById('sfSave').onclick = () => {
       const val = x => document.getElementById(x).value.trim();
@@ -2628,7 +2652,7 @@ const Admin = {
         pickup: document.getElementById('sfPickup').checked,
         shipping: document.getElementById('sfShipping').checked,
         active: document.getElementById('sfActive').checked,
-        stripeAccount: val('sfStripe'), brand: d.brand, logo: d.logo,
+        stripeAccount: val('sfStripe'), brand: d.brand, logo: d.logo, cover: d.cover,
         headline: val('sfHeadline'), blurb: val('sfBlurb')
       };
       const err = document.getElementById('sfErr');
