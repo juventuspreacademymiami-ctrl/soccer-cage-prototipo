@@ -167,6 +167,12 @@ const ok = (cond, label, extra) => {
   const st3 = (await as('authenticated', admin, 'select public.load_state() as s'))[0].s;
   const leo2 = st3.data.roster.find(x => x.external_id === 'pm-1');
   ok(rr.added === 0 && rr.updated === 1 && leo2.team === 'U12 Blue' && leo2.size === 'YM', 'segunda pasada: actualiza el equipo sin duplicar ni borrar la talla', { team: leo2.team, size: leo2.size });
+  // Tercera pasada idéntica: nada cambia, así que no se guarda (ni revisión nueva ni copia en el historial)
+  const hist3 = (await db.query('select count(*)::int as n from public.app_state_history')).rows[0].n;
+  rr = (await as('anon', null, 'select public.import_roster($1, $2, $3::jsonb) as r', [key, 'academy', JSON.stringify([{ player: 'Leo Nuevo', email: 'papa@x.com', team: 'U12 Blue', role: 'goalkeeper', size: '', external_id: 'pm-1' }])]))[0].r;
+  const st4 = (await as('authenticated', admin, 'select public.load_state() as s'))[0].s;
+  const hist4 = (await db.query('select count(*)::int as n from public.app_state_history')).rows[0].n;
+  ok(rr.updated === 0 && rr.unchanged === 1 && st4.rev === st3.rev && hist4 === hist3, 'sin cambios: no sube la revisión ni llena el historial', { rr, rev: [st3.rev, st4.rev], hist: [hist3, hist4] });
   // Un guardado del panel hecho con la revisión anterior recibe conflicto (no pisa la lista)
   const stale = (await as('authenticated', admin, 'select public.save_state($1, $2::jsonb) as r', [st2.rev, JSON.stringify(st2.data)]))[0].r;
   ok(!stale.ok && stale.conflict, 'el panel con datos viejos recibe conflicto en vez de pisar la lista sincronizada');

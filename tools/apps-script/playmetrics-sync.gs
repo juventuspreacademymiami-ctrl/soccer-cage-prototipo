@@ -58,7 +58,7 @@ function sincronizar() {
   cfg.programas.forEach(function (id) { filas = filas.concat(leerPrograma_(ses, id)); });
   if (!filas.length) { Logger.log('Sin jugadores vigentes; no se envía nada.'); return; }
   var r = enviar_(cfg, filas);
-  Logger.log('Enviados ' + filas.length + ' → nuevos ' + r.added + ', actualizados ' + r.updated + ', ya entregados ' + r.kept + ', omitidos ' + r.skipped);
+  Logger.log('Enviados ' + filas.length + ' → nuevos ' + r.added + ', actualizados ' + r.updated + ', sin cambios ' + (r.unchanged || 0) + ', ya entregados ' + r.kept + ', omitidos ' + r.skipped);
   PropertiesService.getScriptProperties().setProperty('ULTIMA_SINCRONIZACION', new Date().toISOString() + ' · ' + filas.length + ' jugadores');
 }
 
@@ -163,7 +163,8 @@ function preguntas_(q) {
   (function walk(o, depth) {
     if (!o || typeof o !== 'object' || depth > 6) return;
     if (Array.isArray(o)) { o.forEach(function (x) { walk(x, depth + 1); }); return; }
-    if (o.label && o.id != null) out.push({ id: o.id, label: String(o.label) });
+    var txt = o.label || o.title;   // PlayMetrics guarda el texto de la pregunta en "title"
+    if (txt && o.id != null) out.push({ id: o.id, label: String(txt) });
     Object.keys(o).forEach(function (k) { walk(o[k], depth + 1); });
   })(q, 0);
   return out;

@@ -57,8 +57,9 @@ declare
   roster jsonb;
   row_in jsonb;
   existing jsonb;
+  merged jsonb;
   idx int;
-  added int := 0; updated int := 0; kept int := 0; skipped int := 0;
+  added int := 0; updated int := 0; same int := 0; kept int := 0; skipped int := 0;
   counters jsonb;
   next_n int;
   ident text;
@@ -100,14 +101,21 @@ begin
       added := added + 1;
     elsif existing ->> 'status' = 'pendiente' then
       -- Se actualiza lo que viene; una talla puesta a mano en el panel no se pisa con una vacía.
-      roster := jsonb_set(roster, array[idx::text], existing || jsonb_build_object(
+      merged := existing || jsonb_build_object(
         'player', trim(row_in ->> 'player'), 'email', lower(coalesce(row_in ->> 'email', existing ->> 'email')),
         'team', coalesce(nullif(row_in ->> 'team', ''), existing ->> 'team'),
         'role', case when row_in ->> 'role' = 'goalkeeper' then 'goalkeeper' else 'player' end,
         'size', case when (row_in ->> 'size') = any(sizes) then row_in ->> 'size' else coalesce(existing ->> 'size', '') end,
         'sockSize', case when (row_in ->> 'sockSize') = any(sizes) then row_in ->> 'sockSize' else coalesce(existing ->> 'sockSize', '') end,
-        'external_id', coalesce(nullif(row_in ->> 'external_id', ''), existing ->> 'external_id', ''), 'syncedAt', now()));
-      updated := updated + 1;
+        'external_id', coalesce(nullif(row_in ->> 'external_id', ''), existing ->> 'external_id', ''));
+      -- Sin cambios reales no se guarda nada: así la sincronización de cada hora no
+      -- llena el historial ni le cambia la revisión a quien está editando en el panel.
+      if merged = existing then
+        same := same + 1;
+      else
+        roster := jsonb_set(roster, array[idx::text], merged || jsonb_build_object('syncedAt', now()));
+        updated := updated + 1;
+      end if;
     else
       kept := kept + 1;   -- ya entregado: no se toca
     end if;
@@ -123,7 +131,7 @@ begin
            updated_at = now(), updated_by = 'sync:' || p_program
      where id = 1;
   end if;
-  return jsonb_build_object('ok', true, 'added', added, 'updated', updated, 'kept', kept, 'skipped', skipped, 'rev', st.rev + (case when added > 0 or updated > 0 then 1 else 0 end));
+  return jsonb_build_object('ok', true, 'added', added, 'updated', updated, 'unchanged', same, 'kept', kept, 'skipped', skipped, 'rev', st.rev + (case when added > 0 or updated > 0 then 1 else 0 end));
 end $$;
 
 revoke execute on function public.rotate_integration_key(text), public.check_integration_key(text, text), public.import_roster(text, text, jsonb) from public, anon, authenticated;
