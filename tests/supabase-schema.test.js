@@ -4,6 +4,7 @@
 const fs = require('fs');
 const path = require('path');
 const { PGlite } = require('@electric-sql/pglite');
+const { pgcrypto } = require('@electric-sql/pglite/contrib/pgcrypto');
 
 let fails = 0;
 const ok = (cond, label, extra) => {
@@ -12,8 +13,9 @@ const ok = (cond, label, extra) => {
 };
 
 (async () => {
-  const db = new PGlite();
+  const db = new PGlite({ extensions: { pgcrypto } });
   await db.exec(`
+    create schema extensions; create extension pgcrypto schema extensions;
     create role anon nologin;
     create role authenticated nologin;
     create schema auth;
@@ -131,6 +133,44 @@ const ok = (cond, label, extra) => {
   ok(!!(await up('authenticated', 'intruso@gmail.com')), 'una cuenta ajena no puede subir');
   ok(!!(await up('anon', null)), 'un visitante no puede subir');
   ok(!!(await fails_(() => as('authenticated', 'eduardo@soccercage.com', `insert into storage.objects (bucket_id, name) values ('otra', 'x.jpg')`))), 'ni siquiera el equipo sube a otra carpeta');
+
+  console.log('\n== Receptor de listas (supabase/integraciones.sql) ==');
+  const integ = fs.readFileSync(path.join(__dirname, '..', 'supabase', 'integraciones.sql'), 'utf8');
+  await db.exec(integ); await db.exec(integ);
+  ok(true, 'el receptor se aplica y se puede volver a ejecutar');
+  ok(!!(await fails_(() => as('authenticated', 'eduardo@soccercage.com', "select public.rotate_integration_key('roster')"))), 'crear la clave del script: solo administradores');
+  const key = (await as('authenticated', admin, "select public.rotate_integration_key('roster') as k"))[0].k;
+  ok(/^sc_[0-9a-f]{48}$/.test(key), 'el admin recibe una clave propia para el script (una sola vez)');
+  ok(!!(await fails_(() => as('anon', null, "select public.import_roster('sc_mala', 'academy', '[]'::jsonb)"))), 'con una clave equivocada no entra nada');
+  // Estado con un programa "academy" y una entrega ya hecha
+  let cur = (await as('authenticated', admin, 'select public.load_state() as s'))[0].s;
+  cur.data.programs = [{ id: 'academy', storeId: 'athletum' }];
+  cur.data.roster = [{ id: 'r1', program: 'academy', player: 'Ana Vieja', email: 'mama@x.com', team: 'U10', role: 'player', size: 'YS', sockSize: 'S', status: 'entregado' }];
+  cur.data.counters = { roster: 100 };
+  await as('authenticated', admin, 'select public.save_state($1, $2::jsonb)', [cur.rev, JSON.stringify(cur.data)]);
+  const rows = [
+    { player: 'Leo Nuevo', email: 'Papa@X.com', team: 'U12 Red', role: 'goalkeeper', size: 'YM', sockSize: 'S', external_id: 'pm-1' },
+    { player: 'Ana Vieja', email: 'mama@x.com', team: 'U10', role: 'player', size: 'YL', external_id: '' },
+    { player: '', email: 'sin@nombre.com' },
+    { player: 'Talla Rara', email: 'r@x.com', size: 'Adult S', external_id: 'pm-3' }
+  ];
+  let rr = (await as('anon', null, 'select public.import_roster($1, $2, $3::jsonb) as r', [key, 'academy', JSON.stringify(rows)]))[0].r;
+  ok(rr.ok && rr.added === 2 && rr.kept === 1 && rr.skipped === 1, 'primera sincronización: agrega 2, respeta 1 entregado, salta 1 sin nombre', rr);
+  let st2 = (await as('authenticated', admin, 'select public.load_state() as s'))[0].s;
+  const leo = st2.data.roster.find(x => x.external_id === 'pm-1');
+  ok(leo && leo.id === 'r101' && leo.email === 'papa@x.com' && leo.role === 'goalkeeper' && leo.status === 'pendiente' && leo.source === 'sync', 'el nuevo queda pendiente, con correo en minúsculas y como portero', leo);
+  ok(st2.data.roster.find(x => x.external_id === 'pm-3').size === '', 'una talla no reconocida queda vacía para corregir a mano');
+  ok(st2.data.roster.find(x => x.player === 'Ana Vieja').size === 'YS', 'lo ya entregado no se modifica');
+  ok(st2.rev === cur.rev + 2 && st2.updated_by === 'sync:academy', 'el guardado del script sube la revisión y firma como sync', { rev: st2.rev, by: st2.updated_by });
+  // Segunda pasada: mismo jugador con cambio de equipo; talla vacía no pisa la existente
+  rr = (await as('anon', null, 'select public.import_roster($1, $2, $3::jsonb) as r', [key, 'academy', JSON.stringify([{ player: 'Leo Nuevo', email: 'papa@x.com', team: 'U12 Blue', role: 'goalkeeper', size: '', external_id: 'pm-1' }])]))[0].r;
+  const st3 = (await as('authenticated', admin, 'select public.load_state() as s'))[0].s;
+  const leo2 = st3.data.roster.find(x => x.external_id === 'pm-1');
+  ok(rr.added === 0 && rr.updated === 1 && leo2.team === 'U12 Blue' && leo2.size === 'YM', 'segunda pasada: actualiza el equipo sin duplicar ni borrar la talla', { team: leo2.team, size: leo2.size });
+  // Un guardado del panel hecho con la revisión anterior recibe conflicto (no pisa la lista)
+  const stale = (await as('authenticated', admin, 'select public.save_state($1, $2::jsonb) as r', [st2.rev, JSON.stringify(st2.data)]))[0].r;
+  ok(!stale.ok && stale.conflict, 'el panel con datos viejos recibe conflicto en vez de pisar la lista sincronizada');
+  ok(!!(await fails_(() => as('anon', null, 'select public.import_roster($1, $2, $3::jsonb)', [key, 'inexistente', '[]']))), 'programa desconocido: rechazado');
 
   await db.close();
   console.log(fails ? `\n${fails} FALLOS` : '\nTODO OK');
