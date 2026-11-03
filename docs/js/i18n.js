@@ -752,8 +752,8 @@ const I18N = {
 
     // ---------- Tiendas ----------
     'store.internal': { es: 'Uso interno', en: 'Internal use' },
-    'store.statusActive': { es: 'Activa', en: 'Live' },
-    'store.statusPrep': { es: 'En preparación', en: 'In setup' },
+    'store.statusActive': { es: 'Publicada', en: 'Published' },
+    'store.statusPrep': { es: 'Sin publicar', en: 'Not published' },
     'store.camps.title': { es: 'Uniforme oficial del Summer Camp', en: 'Official Summer Camp uniform' },
     'store.camps.body': { es: 'Compra el kit de tu jugador desde el teléfono y recógelo en el campamento, o recíbelo en casa. Sin efectivo.', en: 'Buy your player’s kit from your phone and pick it up at camp, or have it shipped home. No cash.' },
     'store.athletum.title': { es: 'Uniforme oficial de Athletum FC', en: 'Official Athletum FC uniform' },
@@ -766,7 +766,6 @@ const I18N = {
     // ---------- Tienda: portada, kits y piezas ----------
     'shop.official': { es: 'Tienda oficial', en: 'Official store' },
     'shop.storesAria': { es: 'Elegir tienda', en: 'Choose store' },
-    'shop.phase': { es: 'Fase {n}', en: 'Phase {n}' },
     'shop.previewTitle': { es: 'Vista previa · fase {n}', en: 'Preview · phase {n}' },
     'shop.previewBody': { es: 'Esta tienda aún no está publicada. Puedes recorrerla y hacer pedidos de prueba.', en: 'This store is not live yet. You can browse it and place test orders.' },
     'shop.previewBodySource': { es: 'Esta tienda aún no está publicada. El catálogo (nombres, precios, tallas y fotos) se importó de {source}; el stock es de ejemplo.', en: 'This store is not live yet. The catalog (names, prices, sizes, and photos) was imported from {source}; stock levels are sample data.' },
@@ -902,7 +901,7 @@ const I18N = {
     'adm.dashboard.deliveriesFoot': { es: 'Academia e ID Camp, sin venta', en: 'Academy and ID Camp, no sale' },
     'adm.dashboard.salesByStore': { es: 'Ventas por tienda', en: 'Sales by store' },
     'adm.dashboard.storeOrders': { es: '{n} pedidos', en: '{n} orders' },
-    'adm.dashboard.storePrep': { es: 'Fase {phase} · en preparación', en: 'Phase {phase} · in setup' },
+    'adm.dashboard.storePrep': { es: 'Sin publicar', en: 'Not published' },
     'adm.inv.allKinds': { es: 'Todos los tipos', en: 'All types' },
     'adm.inv.colStores': { es: 'Tiendas', en: 'Stores' },
     'adm.inv.sharedFoot': { es: '{n} productos se venden en más de una tienda', en: '{n} products are sold in more than one store' },
@@ -1039,7 +1038,7 @@ const I18N = {
 
     // ---------- Panel admin: Tiendas ----------
     'adm.stores.title': { es: 'Tiendas', en: 'Stores' },
-    'adm.stores.sub': { es: 'Tres tiendas, un solo inventario. Se abren por fases: primero campamentos, luego Athletum y luego Las Vegas.', en: 'Three stores, one inventory. They open in phases: camps first, then Athletum, then Las Vegas.' },
+    'adm.stores.sub': { es: 'Todas las tiendas venden del mismo inventario. Una tienda sin publicar solo la ve el equipo.', en: 'Every store sells from the same inventory. An unpublished store is only visible to the team.' },
     'adm.stores.sharedTitle': { es: 'Inventario compartido', en: 'Shared inventory' },
     'adm.stores.sharedBody': { es: 'Una venta en cualquier tienda descuenta del mismo stock. Hoy {n} productos se venden en más de una tienda.', en: 'A sale in any store deducts from the same stock. Today {n} products are sold in more than one store.' },
     'adm.stores.replaces': { es: 'reemplaza a {url}', en: 'replaces {url}' },

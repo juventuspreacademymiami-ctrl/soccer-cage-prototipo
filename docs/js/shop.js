@@ -70,7 +70,6 @@ const Shop = {
             ${UI.storeMark(s, 26)}
             <span class="store-tab-text">
               <span class="store-tab-name">${UI.esc(s.name)}</span>
-              <span class="store-tab-meta">${I18N.t('shop.phase', { n: s.phase })} · ${I18N.t(s.active ? 'store.statusActive' : 'store.statusPrep')}</span>
             </span>
           </button>`).join('')}
       </div>`}

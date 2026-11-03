@@ -223,7 +223,7 @@ const Admin = {
               <div class="bar-row">
                 <div class="bar-label">
                   <div style="font-weight:560">${UI.esc(b.store.short)}</div>
-                  <div class="tiny muted">${I18N.t(b.store.active ? 'adm.dashboard.storeOrders' : 'adm.dashboard.storePrep', { n: b.orders, phase: b.store.phase })}</div>
+                  <div class="tiny muted">${I18N.t(b.store.active ? 'adm.dashboard.storeOrders' : 'adm.dashboard.storePrep', { n: b.orders })}</div>
                 </div>
                 <div class="bar-track"><div class="bar-fill ${i === 0 ? 'gold' : ''}" style="width:${(b.revenue / maxStore) * 100}%"></div></div>
                 <div class="bar-val">${UI.money0(b.revenue)}</div>
@@ -2434,7 +2434,7 @@ const Admin = {
               ${UI.storeMark(s, 40)}
               <div>
                 <h2>${UI.esc(s.name)}</h2>
-                <p class="muted tiny" style="margin-top:2px">${I18N.t('shop.phase', { n: s.phase })}${s.source ? ' · ' + I18N.t('adm.stores.replaces', { url: UI.esc(s.source.replace(/^https?:\/\//, '').replace(/\/$/, '')) }) : ''}</p>
+                ${s.source ? `<p class="muted tiny" style="margin-top:2px">${I18N.t('adm.stores.replaces', { url: UI.esc(s.source.replace(/^https?:\/\//, '').replace(/\/$/, '')) })}</p>` : ''}
               </div>
             </div>
             <span class="badge ${s.active ? 'badge-ok' : 'badge-neutral'}"><span class="dot"></span>${I18N.t(s.active ? 'store.statusActive' : 'store.statusPrep')}</span>
