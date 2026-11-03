@@ -158,6 +158,8 @@ const App = {
     }
     this.syncUser();
     this.setMode('shop');   // deja la barra coherente desde el arranque
+    const ir = new URLSearchParams(location.search).get('panel');
+    if (!this.storefront && ir && /^[a-z]+$/.test(ir) && document.getElementById('page-' + ir)) { this.pendingPage = ir; this.setMode('admin'); }
 
     // Atajos de teclado para la demostración en vivo
     document.addEventListener('keydown', e => {
@@ -206,7 +208,12 @@ const App = {
     document.getElementById('sidebar').classList.remove('open');
 
     if (mode === 'shop') { Shop.render(); Shop.renderCart(); }
-    else if (mode === 'admin') Admin.refresh();
+    else if (mode === 'admin') {
+      // ?panel=settings abre el panel directo en esa sección (enlaces de la lista de pendientes).
+      if (this.pendingPage && document.getElementById('page-' + this.pendingPage)) { Admin.go(this.pendingPage); Admin.updateBadge(); }
+      else Admin.refresh();
+      this.pendingPage = null;
+    }
     else Compare.render();
 
     // Al arrancar no hay nada que desplazar: evita un salto visible.
