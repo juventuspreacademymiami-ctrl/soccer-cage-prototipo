@@ -2355,8 +2355,10 @@ const Admin = {
   /* ============================================================
      TIENDAS — tres canales sobre el mismo inventario
      ============================================================ */
+  /** Enlace público de la tienda: su dominio propio si está configurado; si no, el sitio con ?store=. */
   storeUrl(id) {
-    return location.origin + location.pathname + '?store=' + id;
+    const host = Object.keys(window.SOCCERCAGE_HOSTS || {}).find(h => window.SOCCERCAGE_HOSTS[h] === id);
+    return host ? 'https://' + host + '/' : location.origin + location.pathname + '?store=' + id;
   },
 
   storesHTML() {

@@ -106,7 +106,7 @@ const App = {
       document.body.appendChild(el);
     }
     el.innerHTML = `<div class="boot-box">${err ? '' : '<div class="boot-spin"></div>'}<p>${UI.esc(msg)}</p>${err
-      ? `<p class="muted tiny">${UI.esc(err.message || '')}</p><button class="btn btn-primary" onclick="location.reload()">${I18N.t('cloud.retry')}</button>` : ''}</div>`;
+      ? `<p class="muted tiny">${UI.esc(err.code === 'offline' ? I18N.t('cloud.offline') : (err.message || ''))}</p><button class="btn btn-primary" onclick="location.reload()">${I18N.t('cloud.retry')}</button>` : ''}</div>`;
   },
 
   /* ---------- Arranque común ---------- */
@@ -119,7 +119,9 @@ const App = {
       if (e.key === 'soccercage_rev' && Store.syncFromStorage()) this.refreshAll();
     });
 
-    const wanted = new URLSearchParams(location.search).get('store');
+    // La tienda se elige por el dominio (store.athletumfc.com → athletum) o por ?store=.
+    const hosts = window.SOCCERCAGE_HOSTS || {};
+    const wanted = hosts[location.hostname.toLowerCase()] || new URLSearchParams(location.search).get('store');
     if (wanted && Store.storeCfg(wanted)) {
       this.storefront = wanted;
       Store.setStore(wanted);

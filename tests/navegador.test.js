@@ -523,6 +523,40 @@ scenarios.compras = async function (browser) {
   await page.context().close();
 };
 
+/* Dominio propio por tienda (petición de Eduardo del 2026-11-02) */
+scenarios.dominios = async function (browser) {
+  const ctx = await browser.newContext({ viewport: { width: 1366, height: 900 } });
+  await ctx.addInitScript(() => { window.SOCCERCAGE_FORCE_LOCAL = true; });
+  // El sitio real responde en localhost; se simula que se entra por store.athletumfc.com.
+  await ctx.route('https://store.athletumfc.com/**', async r => {
+    const res = await r.fetch({ url: r.request().url().replace('https://store.athletumfc.com/', BASE) });
+    await r.fulfill({ response: res });
+  });
+  await ctx.route('**/js/config.js', async r => {
+    const res = await r.fetch({ url: BASE + 'js/config.js' });
+    const body = (await res.text()).replace(/window\.SOCCERCAGE_HOSTS = \{[\s\S]*?\};/, "window.SOCCERCAGE_HOSTS = { 'store.athletumfc.com': 'athletum', 'store.juventuscamps.com': 'camps' };");
+    await r.fulfill({ contentType: 'application/javascript', body });
+  });
+  const page = await ctx.newPage();
+  page.issues = [];
+  page.on('pageerror', e => page.issues.push(e.message));
+  await page.goto('https://store.athletumfc.com/');
+  await page.waitForSelector('#appShop.active');
+  ok(await page.evaluate(() => App.storefront) === 'athletum', 'entrar por store.athletumfc.com abre la tienda de Athletum');
+  ok(await page.locator('.store-tabs').count() === 0 && await page.locator('.mode-switch').isHidden(), 'sin selector de tiendas ni panel: es la tienda pública');
+  ok(/Athletum/.test(await page.locator('#brandName').innerText()), 'la marca de la barra es la de Athletum');
+
+  // Desde el sitio principal, el panel enlaza y dibuja el QR con el dominio propio.
+  await page.goto(BASE);
+  await page.waitForSelector('.store-tab');
+  await page.click('#btnAdmin');
+  await page.click('.side-link[data-page="stores"]');
+  const urls = await page.evaluate(() => [...document.querySelectorAll('.store-url')].map(e => e.textContent.trim()));
+  ok(urls.some(u => u === 'https://store.athletumfc.com/') && urls.some(u => u === 'https://store.juventuscamps.com/') && urls.some(u => /\?store=lasvegas$/.test(u)), 'cada tienda enlaza a su dominio propio; sin dominio, al sitio con ?store=', urls);
+  ok(page.issues.length === 0, 'sin errores en consola', page.issues);
+  await ctx.close();
+};
+
 /* .xlsx mínimo (zip + XML) para probar el lector sin librerías. */
 function makeXlsx(rows) {
   const zlib = require('zlib');

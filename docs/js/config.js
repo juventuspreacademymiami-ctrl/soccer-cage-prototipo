@@ -14,3 +14,12 @@ window.SOCCERCAGE_CLOUD = {
   url: 'https://abrjwvfeymexkwecjpxr.supabase.co',
   key: 'sb_publishable_rFqmTypStQiaEZu4lfaqCg__cziAcGE'
 };
+
+/* Dominio propio de cada tienda: al entrar por ese dominio se abre solo esa
+   tienda (igual que ?store=…), y el QR y los enlaces del panel lo usan.
+   Se completa cuando los subdominios apunten al sitio. */
+window.SOCCERCAGE_HOSTS = {
+  // 'store.juventuscamps.com': 'camps',
+  // 'store.athletumfc.com': 'athletum',
+  // 'store.jacademylasvegas.com': 'lasvegas'
+};
