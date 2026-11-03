@@ -9,8 +9,13 @@
 
    Proyecto propio de Apps Script (no comparte nada con otras automatizaciones
    de la misma cuenta). Configuración en Propiedades del script:
-     PM_EMAIL          correo del usuario de PlayMetrics (solo lectura)
-     PM_PASSWORD       su contraseña
+     PM_REFRESH        llave de renovación de la sesión de PlayMetrics (secreta).
+                       Es la misma forma que usa "LV · Resultados a Meta": sirve
+                       para cuentas que entran con invitación o con Google, sin
+                       contraseña. Si se cambia la contraseña o se cierran todas
+                       las sesiones de PlayMetrics, hay que renovarla.
+     PM_ROL            rol con el que se entra (Admin_576 = Juventus Miami / Athletum FC)
+     PM_EMAIL / PM_PASSWORD   alternativa a PM_REFRESH para un usuario con contraseña
      PM_FIREBASE_KEY   clave web pública de Firebase que usa app.playmetrics.com
      PM_PROGRAMS       ids de programas separados por coma, p. ej. 94780
      SC_URL            https://abrjwvfeymexkwecjpxr.supabase.co
@@ -20,6 +25,7 @@
    ============================================================ */
 
 var PM_API = 'https://api.playmetrics.com';
+var ROL_MIAMI = 'Admin_576';
 var POPULATE = 'subscriptions,subscriptions:player,subscriptions:payment_details,subscriptions:user,team_assignments';
 
 /** Instala el disparador de cada hora (ejecutar una sola vez). */
@@ -59,10 +65,13 @@ function sincronizar() {
 /* ---------- Configuración ---------- */
 function config_() {
   var pr = PropertiesService.getScriptProperties();
-  var need = ['PM_EMAIL', 'PM_PASSWORD', 'PM_FIREBASE_KEY', 'PM_PROGRAMS', 'SC_URL', 'SC_KEY', 'SC_ROSTER_KEY', 'SC_PROGRAM'];
+  var need = ['PM_FIREBASE_KEY', 'PM_PROGRAMS', 'SC_URL', 'SC_KEY', 'SC_ROSTER_KEY', 'SC_PROGRAM'];
   var faltan = need.filter(function (k) { return !pr.getProperty(k); });
+  var conClave = pr.getProperty('PM_EMAIL') && pr.getProperty('PM_PASSWORD') && pr.getProperty('PM_PASSWORD') !== 'PENDIENTE';
+  if (!pr.getProperty('PM_REFRESH') && !conClave) faltan.push('PM_REFRESH (o PM_EMAIL y PM_PASSWORD)');
   if (faltan.length) throw new Error('Faltan propiedades del script: ' + faltan.join(', '));
   return {
+    refresh: pr.getProperty('PM_REFRESH'), rol: pr.getProperty('PM_ROL') || ROL_MIAMI,
     email: pr.getProperty('PM_EMAIL'), password: pr.getProperty('PM_PASSWORD'), firebaseKey: pr.getProperty('PM_FIREBASE_KEY'),
     programas: pr.getProperty('PM_PROGRAMS').split(',').map(function (s) { return s.trim(); }).filter(Boolean),
     scUrl: pr.getProperty('SC_URL').replace(/\/$/, ''), scKey: pr.getProperty('SC_KEY'), rosterKey: pr.getProperty('SC_ROSTER_KEY'), programa: pr.getProperty('SC_PROGRAM')
@@ -74,6 +83,33 @@ function config_() {
    luego pide a su API una "access key". Aquí se hace lo mismo que hace la
    web, sin guardar nada más que lo necesario durante la ejecución. */
 function iniciarSesion_(cfg) {
+  var idToken = cfg.refresh ? tokenPorLlave_(cfg) : tokenPorClave_(cfg);
+  var r2 = UrlFetchApp.fetch(PM_API + '/firebase/user/login', {
+    method: 'post', contentType: 'application/json', muteHttpExceptions: true,
+    headers: { 'Firebase-Token': idToken }, payload: JSON.stringify({ current_role_id: cfg.rol, client_type: 'desktop' })
+  });
+  if (r2.getResponseCode() !== 200) throw new Error('PlayMetrics no devolvió la sesión (' + r2.getResponseCode() + ')');
+  var u = JSON.parse(r2.getContentText()); u = u.data || u;
+  if (!u.access_key) throw new Error('PlayMetrics no devolvió la access key');
+  var club = (u.current_role || {}).club_id, quiero = Number(String(cfg.rol).replace(/\D/g, ''));
+  if (quiero && club && club !== quiero) throw new Error('PlayMetrics entró al club ' + club + ' y no al ' + quiero + ' (rol ' + cfg.rol + ')');
+  return { token: idToken, accessKey: u.access_key };
+}
+
+/** Sesión guardada (como "LV · Resultados a Meta"): renueva el token sin contraseña. */
+function tokenPorLlave_(cfg) {
+  var r = UrlFetchApp.fetch('https://securetoken.googleapis.com/v1/token?key=' + encodeURIComponent(cfg.firebaseKey), {
+    method: 'post', muteHttpExceptions: true, contentType: 'application/x-www-form-urlencoded',
+    payload: 'grant_type=refresh_token&refresh_token=' + encodeURIComponent(cfg.refresh)
+  });
+  var j = {}; try { j = JSON.parse(r.getContentText()); } catch (e) {}
+  if (!j.id_token) throw new Error('PlayMetrics: la sesión guardada ya no sirve (' + ((j.error || {}).message || r.getResponseCode()) + '). Hay que renovar PM_REFRESH.');
+  if (j.refresh_token && j.refresh_token !== cfg.refresh) PropertiesService.getScriptProperties().setProperty('PM_REFRESH', j.refresh_token);
+  return j.id_token;
+}
+
+/** Usuario con correo y contraseña. */
+function tokenPorClave_(cfg) {
   var r = UrlFetchApp.fetch('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=' + encodeURIComponent(cfg.firebaseKey), {
     method: 'post', contentType: 'application/json', muteHttpExceptions: true,
     payload: JSON.stringify({ email: cfg.email, password: cfg.password, returnSecureToken: true })
@@ -82,15 +118,7 @@ function iniciarSesion_(cfg) {
     var msg = ''; try { msg = JSON.parse(r.getContentText()).error.message; } catch (e) {}
     throw new Error('PlayMetrics no aceptó el correo o la contraseña (' + r.getResponseCode() + ' ' + msg + ')');
   }
-  var idToken = JSON.parse(r.getContentText()).idToken;
-  var r2 = UrlFetchApp.fetch(PM_API + '/firebase/user/login', {
-    method: 'post', contentType: 'application/json', muteHttpExceptions: true,
-    headers: { 'Firebase-Token': idToken }, payload: JSON.stringify({ client_type: 'web' })
-  });
-  if (r2.getResponseCode() !== 200) throw new Error('PlayMetrics no devolvió la sesión (' + r2.getResponseCode() + ')');
-  var u = JSON.parse(r2.getContentText()); u = u.data || u;
-  if (!u.access_key) throw new Error('PlayMetrics no devolvió la access key');
-  return { token: idToken, accessKey: u.access_key };
+  return JSON.parse(r.getContentText()).idToken;
 }
 
 function pedir_(ses, ruta) {
@@ -126,8 +154,8 @@ function leerPrograma_(ses, programId) {
 
 /** "COMPETITIVE PROGRAM CORAL GABLES 2026/27" → "Coral Gables" */
 function sede_(name) {
-  var n = String(name || '').replace(/competitive prog(ram|.)?/i, '').replace(/d{4}/d{2}/g, '').replace(/s+/g, ' ').trim();
-  return n.toLowerCase().replace(/(^|s)S/g, function (c) { return c.toUpperCase(); });
+  var n = String(name || '').replace(/competitive prog(ram|\.)?/i, '').replace(/\d{4}\/\d{2}/g, '').replace(/\s+/g, ' ').trim();
+  return n.toLowerCase().replace(/(^|\s)\S/g, function (c) { return c.toUpperCase(); });
 }
 
 function preguntas_(q) {
