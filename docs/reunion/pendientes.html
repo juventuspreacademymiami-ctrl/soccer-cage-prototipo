@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lanzamiento Soccer Cage</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Source+Sans+3:wght@400;600&display=swap">
+<style>
+  /* Layout: una columna ancha para proyectar; bloques por responsable, no por tecnología. */
+  :root {
+    --bg: #f6f5f1;
+    --surface: #ffffff;
+    --fg: #15171c;
+    --muted: #5b6069;
+    --line: #dcdad2;
+    --accent: #0a6a4f;
+    --accent-ink: #ffffff;
+    --accent-soft: #e2f1ea;
+    --warn: #b45309;
+    --warn-soft: #fbeee0;
+    --ok: #0a6a4f;
+    --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+    --body: "Source Sans 3", "Segoe UI", Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #15171c; --surface: #1e2127; --fg: #f1f1ec; --muted: #a2a7b0; --line: #343941;
+      --accent: #3dbf95; --accent-ink: #0d1a15; --accent-soft: #1e3a30; --warn: #f0a24b; --warn-soft: #3a2a14; --ok: #3dbf95;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #15171c; --surface: #1e2127; --fg: #f1f1ec; --muted: #a2a7b0; --line: #343941;
+    --accent: #3dbf95; --accent-ink: #0d1a15; --accent-soft: #1e3a30; --warn: #f0a24b; --warn-soft: #3a2a14; --ok: #3dbf95;
+    color-scheme: dark;
+  }
+  body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 19px; line-height: 1.5; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding-block: 40px 72px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  h1, h2, h3 { font-family: var(--display); line-height: 1.1; text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(34px, 5vw, 56px); font-weight: 800; letter-spacing: -0.02em; }
+  h2 { font-size: clamp(24px, 3vw, 34px); font-weight: 700; letter-spacing: -0.01em; }
+  h3 { font-size: 21px; font-weight: 600; }
+  p { margin: 0; }
+  .eyebrow { font-family: var(--display); font-size: 13px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  .lead { font-size: 22px; color: var(--muted); max-width: 46ch; margin-top: 12px; }
+  header { display: grid; gap: 10px; padding-bottom: 32px; border-bottom: 2px solid var(--fg); }
+
+  .status { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-top: 32px; }
+  .tile { background: var(--surface); border: 1px solid var(--line); padding: 18px 20px; display: grid; gap: 6px; min-width: 0; }
+  .tile .eyebrow { color: var(--ok); }
+  .tile strong { font-family: var(--display); font-size: 20px; font-weight: 700; }
+  .tile span { color: var(--muted); font-size: 17px; }
+
+  section { margin-top: 56px; display: grid; gap: 20px; }
+  .section-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+  .who { font-family: var(--display); font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 5px 10px; background: var(--accent); color: var(--accent-ink); }
+  .who.warn { background: var(--warn); color: #fff; }
+  .who.neutral { background: var(--line); color: var(--fg); }
+
+  .items { display: grid; gap: 12px; }
+  .item { background: var(--surface); border: 1px solid var(--line); padding: 18px 22px; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.4fr); gap: 8px 28px; align-items: start; min-width: 0; }
+  .item h3 { font-size: 21px; }
+  .item p { color: var(--muted); font-size: 18px; }
+  .item .ask { color: var(--fg); }
+  .item .ask b { font-weight: 600; }
+  @media (max-width: 720px) { .item { grid-template-columns: 1fr; } body { font-size: 17px; } }
+
+  .item { grid-template-columns: 34px minmax(0, 1.1fr) minmax(0, 1.4fr); }
+  .check { width: 26px; height: 26px; margin: 2px 0 0; accent-color: var(--accent); cursor: pointer; }
+  .item.done { background: var(--accent-soft); }
+  .item.done h3 { text-decoration: line-through; text-decoration-thickness: 2px; color: var(--muted); }
+  .item label { cursor: pointer; }
+  .count { font-family: var(--display); font-size: 15px; font-weight: 600; color: var(--muted); margin-left: auto; align-self: center; }
+  @media (max-width: 720px) { .item { grid-template-columns: 34px 1fr; } .item .ask, .item > p { grid-column: 2; } }
+  .decision { border-left: 6px solid var(--warn); }
+  .decision .eyebrow { color: var(--warn); }
+
+  table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--line); font-size: 18px; }
+  th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-family: var(--display); font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+  td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  .table-wrap { overflow-x: auto; }
+  .note { background: var(--accent-soft); border: 1px solid var(--line); padding: 16px 20px; font-size: 18px; }
+  .note.warn { background: var(--warn-soft); }
+  ul { margin: 0; padding-left: 22px; display: grid; gap: 6px; }
+  footer { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 16px; display: flex; flex-wrap: wrap; gap: 8px 24px; }
+  code { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 0.92em; background: var(--accent-soft); padding: 1px 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Soccer Cage · tienda e inventario · reunión del 3 de noviembre de 2026</div>
+    <h1>Qué falta para salir a producción</h1>
+    <p class="lead">La plataforma ya funciona con datos compartidos. Lo que falta son decisiones, accesos y datos de la empresa; con eso se conectan los cobros, los envíos y los correos reales.</p>
+  </header>
+
+  <div class="status">
+    <div class="tile"><span class="eyebrow">Listo</span><strong>Tienda y panel</strong><span>Tres tiendas sobre un inventario. Compras, envíos, alertas y fotos editables desde el panel.</span></div>
+    <div class="tile"><span class="eyebrow">Listo</span><strong>Base de datos compartida</strong><span>Todo el equipo ve lo mismo. Copias de cada cambio, restaurables.</span></div>
+    <div class="tile"><span class="eyebrow">Listo</span><strong>USPS probado</strong><span>Etiquetas reales creadas y anuladas en modo prueba: direcciones, tarifas y PDF 4×6.</span></div>
+    <div class="tile"><span class="eyebrow">Listo</span><strong>Cuentas de la empresa</strong><span>Base de datos, envíos, correos y hospedaje con el Gmail de la empresa. El código también.</span></div>
+  </div>
+
+  <section>
+    <div class="section-head"><span class="who warn">Decisiones de hoy</span><h2>Lo que tiene que definir Eduardo</h2><span class="count" data-count></span></div>
+    <div class="items">
+      <div class="item decision"><input class="check" type="checkbox" id="chk1" aria-label="Marcar como resuelto"><div><label for="chk1"><span class="eyebrow">Cobros</span><h3>Stripe: una cuenta o una por tienda</h3></label></div><p class="ask">Las Vegas ya cobra con Stripe. <b>¿A nombre de quién está esa cuenta y quién la administra?</b> ¿Athletum usa la misma? La plataforma admite una cuenta de cobro por tienda sin costo extra.</p>
+      </div>
+      <div class="item decision"><input class="check" type="checkbox" id="chk2" aria-label="Marcar como resuelto"><div><label for="chk2"><span class="eyebrow">Dominios</span><h3>Una dirección por tienda</h3></label></div><p class="ask"><code>store.athletumfc.com</code> · <code>store.juventuscampsusa.com</code> · <code>store.jacademylasvegas.com</code>. Athletum y camps están en Hostinger; Las Vegas en GoDaddy. <b>¿Quién tiene el acceso a GoDaddy?</b></p>
+      </div>
+      <div class="item decision"><input class="check" type="checkbox" id="chk3" aria-label="Marcar como resuelto"><div><label for="chk3"><span class="eyebrow">Envíos</span><h3>¿Se envía a todo Estados Unidos?</h3></label></div><p class="ask">Hoy la tienda de Las Vegas solo envía dentro de Nevada. Con USPS automático se puede enviar a cualquier estado; hay que decidir el alcance y el precio de envío al cliente (hoy $9 fijos).</p>
+      </div>
+      <div class="item decision"><input class="check" type="checkbox" id="chk4" aria-label="Marcar como resuelto"><div><label for="chk4"><span class="eyebrow">Impuestos</span><h3>Confirmar con el contador</h3></label></div><p class="ask">Hoy Las Vegas cobra 7 % a todo el país, incluido el envío. Lo esperado: Miami 7 %, Las Vegas (condado Clark) 8,375 %, y sin impuesto a otros estados. ¿Se grava el envío?</p>
+      </div>
+      <div class="item decision"><input class="check" type="checkbox" id="chk5" aria-label="Marcar como resuelto"><div><label for="chk5"><span class="eyebrow">Cambios y devoluciones</span><h3>La política de la tienda</h3></label></div><p class="ask">Cambios de talla, plazos y quién paga el envío de vuelta. Con eso se redactan los términos, la política de devoluciones y la de privacidad que exige Stripe.</p>
+      </div>
+      <div class="item decision"><input class="check" type="checkbox" id="chk17" aria-label="Marcar como resuelto"><div><label for="chk17"><span class="eyebrow">Catálogo</span><h3>Prendas repetidas entre tiendas</h3></label></div><p class="ask">El catálogo trae, por ejemplo, "Away competitive red jersey" en Las Vegas y en Athletum como dos productos. <b>¿Es la misma prenda?</b> Si lo es, se deja un solo producto vendido en las dos tiendas, con un solo stock.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head"><span class="who">Accesos y datos</span><h2>Lo que necesitamos de la empresa</h2><span class="count" data-count></span></div>
+    <div class="items">
+      <div class="item"><input class="check" type="checkbox" id="chk6" aria-label="Marcar como resuelto"><div><label for="chk6"><h3>Invitación a Stripe</h3></label></div><p class="ask">Que el dueño de la cuenta invite a David como miembro del equipo desde stripe.com. No se comparten contraseñas ni se crea otra cuenta.</p>
+      </div>
+      <div class="item"><input class="check" type="checkbox" id="chk7" aria-label="Marcar como resuelto"><div><label for="chk7"><h3>Acceso a los dominios</h3></label></div><p class="ask">Un registro DNS por tienda. Hostinger ya está a mano; falta GoDaddy para Las Vegas.</p>
+      </div>
+      <div class="item"><input class="check" type="checkbox" id="chk8" aria-label="Marcar como resuelto"><div><label for="chk8"><h3>Cuenta bancaria para el saldo de envíos</h3></label></div><p class="ask">EasyPost paga las etiquetas de USPS desde un saldo que se recarga solo por transferencia (ACH), sin comisión. Se acaban los pagos con tarjeta que fallan.</p>
+      </div>
+      <div class="item"><input class="check" type="checkbox" id="chk9" aria-label="Marcar como resuelto"><div><label for="chk9"><h3>Tarjeta de la empresa para la base de datos</h3></label></div><p class="ask">Plan Pro de Supabase: no se pausa y hace copias diarias. Se activa el día del lanzamiento.</p>
+      </div>
+      <div class="item"><input class="check" type="checkbox" id="chk10" aria-label="Marcar como resuelto"><div><label for="chk10"><h3>Datos reales</h3></label></div><p class="ask">Cantidades por talla (con la plantilla de Excel del panel), precios definitivos, productos del Summer Camp, dirección de despacho, quién recibe los pedidos y los avisos de reposición, y la <b>lista de jugadores exportada de PlayMetrics</b> (nombre, correo del acudiente, equipo, posición y talla) para las entregas de uniforme.</p>
+      </div>
+      <div class="item"><input class="check" type="checkbox" id="chk11" aria-label="Marcar como resuelto"><div><label for="chk11"><h3>Correo remitente</h3></label></div><p class="ask">Desde qué dirección salen los correos de pedidos, por ejemplo <code>pedidos@athletumfc.com</code>. Se verifica con tres registros DNS.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head"><span class="who neutral">Equipo técnico</span><h2>Lo que se conecta con esos accesos</h2><span class="count" data-count></span></div>
+    <div class="items">
+      <div class="item"><input class="check" type="checkbox" id="chk12" aria-label="Marcar como resuelto"><div><label for="chk12"><h3>Cobro real con Stripe</h3></label></div><p>Página de pago (tarjeta, Apple Pay, Google Pay), confirmación automática y pedido creado al confirmarse el pago.</p></div>
+      <div class="item"><input class="check" type="checkbox" id="chk13" aria-label="Marcar como resuelto"><div><label for="chk13"><h3>Etiquetas USPS reales</h3></label></div><p>Desde la página Envíos: selección en lote, etiquetas 4×6, seguimiento y resumen del día.</p></div>
+      <div class="item"><input class="check" type="checkbox" id="chk14" aria-label="Marcar como resuelto"><div><label for="chk14"><h3>Correos automáticos</h3></label></div><p>Pedido nuevo a quien prepara, confirmación al cliente, aviso de reposición y recuperación de contraseña.</p></div>
+      <div class="item"><input class="check" type="checkbox" id="chk15" aria-label="Marcar como resuelto"><div><label for="chk15"><h3>Dominios propios</h3></label></div><p>Cada tienda en su dirección; el panel en una dirección aparte.</p></div>
+      <div class="item"><input class="check" type="checkbox" id="chk16" aria-label="Marcar como resuelto"><div><label for="chk16"><h3>Páginas legales y prueba final</h3></label></div><p>Términos, devoluciones y privacidad en la tienda. Compra real de prueba y etiqueta real anulada antes de abrir.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-head"><span class="who neutral">Costos</span><h2>Lo que cuesta operar</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Servicio</th><th>Para qué</th><th>Costo</th></tr></thead>
+        <tbody>
+          <tr><td>Supabase Pro</td><td>Base de datos, usuarios del panel, fotos, copias diarias</td><td class="num">$25 / mes</td></tr>
+          <tr><td>EasyPost</td><td>Etiquetas de USPS con tarifa comercial</td><td class="num">$0 + franqueo</td></tr>
+          <tr><td>Resend</td><td>Correos automáticos</td><td class="num">$0 (hasta 3.000 / mes)</td></tr>
+          <tr><td>Cloudflare Pages</td><td>Hospedaje de la página y dominios</td><td class="num">$0</td></tr>
+          <tr><td>Stripe</td><td>Cobro con tarjeta y billeteras</td><td class="num">2,9 % + $0,30 por venta</td></tr>
+          <tr><td>Dominios</td><td>Ya los tienen</td><td class="num">$0 adicional</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">Total fijo: alrededor de <b>$25 al mes</b>, más la comisión de Stripe por cada venta. No hay servidores propios ni licencias.</p>
+  </section>
+
+  <section>
+    <div class="section-head"><span class="who neutral">Seguridad</span><h2>Tres hábitos desde el primer día</h2></div>
+    <ul>
+      <li>Verificación en dos pasos en el Gmail de la empresa y en cada servicio.</li>
+      <li>Contraseñas en un gestor compartido, no en hojas de cálculo ni chats.</li>
+      <li>Un segundo administrador (Eduardo) en la base de datos, el hospedaje y Stripe.</li>
+    </ul>
+  </section>
+
+  <footer>
+    <span>Página actual: soccer-cage.pages.dev</span>
+    <span>Panel: entrar con el correo de la empresa</span>
+  </footer>
+</div>
+<script>
+  (function () {
+    var KEY = 'soccercage-reunion-2026-11-03';
+    var saved = {};
+    try { saved = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) {}
+    var boxes = Array.prototype.slice.call(document.querySelectorAll('.check'));
+    function paint() {
+      boxes.forEach(function (b) { b.closest('.item').classList.toggle('done', b.checked); });
+      document.querySelectorAll('section').forEach(function (sec) {
+        var c = sec.querySelector('[data-count]'); if (!c) return;
+        var all = sec.querySelectorAll('.check'), on = sec.querySelectorAll('.check:checked');
+        c.textContent = on.length + ' de ' + all.length;
+      });
+    }
+    boxes.forEach(function (b) {
+      b.checked = !!saved[b.id];
+      b.addEventListener('change', function () {
+        saved[b.id] = b.checked;
+        try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch (e) {}
+        paint();
+      });
+    });
+    paint();
+  })();
+</script>
+</body>
+</html>
