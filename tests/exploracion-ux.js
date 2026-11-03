@@ -163,7 +163,7 @@ async function run(browser, label, opts) {
   await keepsScroll('panel/inventario/filtro estado', () => page.selectOption('#invStatus', 'bajo'));
   await page.selectOption('#invStatus', 'todos');
   await keepsScroll('panel/inventario/+ entrada y guardar', async () => {
-    await page.locator('[data-in]').last().evaluate(e => e.click());
+    await page.locator('[data-size]').last().evaluate(e => e.click());
     await page.waitForSelector('#mvSave');
     await page.click('#mvSave');
     await page.waitForSelector('#mvSave', { state: 'detached' });

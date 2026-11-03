@@ -1941,3 +1941,45 @@ button.imp-opt { font: inherit; text-align: left; color: inherit; width: 100%; }
 .pw-eye:hover { color: var(--ink-900); background: var(--ink-50); }
 .pw-eye:focus-visible { outline: 2px solid var(--gold-500); outline-offset: 1px; }
 .pw-eye .ico { width: 18px; height: 18px; }
+
+
+/* ============================================================
+   INVENTARIO POR UNIFORME — tallas a la vista, conteo rápido
+   ============================================================ */
+.inv-hint { margin: 0; padding: 10px 16px; font-size: 12.5px; color: var(--ink-500); border-bottom: 1px solid var(--border); }
+.inv-list { display: grid; }
+.inv-group { padding: 14px 16px 16px; border-bottom: 1px solid var(--border); display: grid; gap: 12px; }
+.inv-group:last-child { border-bottom: 0; }
+.inv-head { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; }
+.inv-title { flex: 1 1 220px; min-width: 0; }
+.inv-title .cell-sub .tags { display: inline-flex; gap: 4px; vertical-align: middle; }
+.inv-total { display: flex; align-items: baseline; gap: 6px; white-space: nowrap; }
+.inv-total b { font-size: 20px; font-weight: 700; letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
+.inv-total span { font-size: 12px; color: var(--ink-500); }
+.inv-actions { display: flex; gap: 6px; margin-left: auto; }
+.size-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+.size-cell {
+  display: grid; grid-template-columns: auto auto; gap: 2px 8px; align-items: baseline;
+  min-width: 68px; padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--r-sm);
+  background: var(--white); color: var(--ink-900); font: inherit; cursor: pointer; text-align: left;
+  transition: border-color .15s ease, background-color .15s ease;
+}
+.size-cell:hover { border-color: var(--ink-500); }
+.size-cell:focus-visible { outline: 2px solid var(--gold-500); outline-offset: 2px; }
+.size-cell .sz { font-size: 11.5px; font-weight: 700; letter-spacing: .04em; color: var(--ink-500); }
+.size-cell .qty { font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.size-cell .inc { grid-column: 1 / -1; font-size: 11px; color: var(--info-600); font-weight: 600; }
+.size-cell.bajo { background: var(--warn-100); border-color: #efd9b0; }
+.size-cell.bajo .qty { color: var(--warn-600); }
+.size-cell.agotado { background: var(--danger-100); border-color: #f1c2c2; }
+.size-cell.agotado .qty { color: var(--danger-600); }
+.size-cell.sincargar { background: var(--ink-50); color: var(--ink-400); border-style: dashed; }
+.count-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; }
+.count-cell { display: grid; gap: 4px; font-size: 12px; font-weight: 700; color: var(--ink-600); letter-spacing: .04em; }
+.count-cell .input { text-align: center; font-size: 16px; font-weight: 600; }
+.count-cell small { font-weight: 500; color: var(--ink-400); letter-spacing: 0; }
+@media (max-width: 640px) {
+  .inv-actions { margin-left: 0; width: 100%; }
+  .inv-actions .btn { flex: 1; }
+  .size-cell { min-width: 60px; }
+}

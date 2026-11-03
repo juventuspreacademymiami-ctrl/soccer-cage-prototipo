@@ -7,7 +7,7 @@
 const Admin = {
   current: 'dashboard',
   f: {
-    inv:  { q: '', raw: '', status: 'todos', store: 'todos', kind: 'todos' },
+    inv:  { q: '', raw: '', status: 'todos', store: 'todos', kind: 'todos', sort: 'nombre' },
     prod: { q: '', raw: '', store: 'todos', type: 'todos', active: 'todos' },
     mov:  { q: '', raw: '', type: 'todos', reason: 'todos' },
     ord:  { q: '', raw: '', status: 'todos', store: 'todos' },
@@ -287,36 +287,37 @@ const Admin = {
   /* ============================================================
      INVENTARIO — una fila por talla, sin importar en qué tienda se venda
      ============================================================ */
-  inventoryRows() {
+  /* ---------- Inventario por uniforme ----------
+     Quien administra piensa en uniformes y tallas, no en códigos: cada fila
+     es un uniforme con todas sus tallas a la vista, y el conteo se hace por
+     uniforme. Tocar una talla abre el registro de entrada o salida. */
+  inventoryGroups() {
     const f = this.f.inv;
-    const rows = [];
+    const q = f.q;
+    const groups = [];
     Store.products.forEach(p => {
       if (!p.active || Store.isKit(p)) return;
       if (!this.matchStore(p, f.store)) return;
       if (f.kind !== 'todos' && p.kind !== f.kind) return;
-      p.variants.forEach(v => {
-        const st = Store.variantStatus(p, v);
-        if (f.status !== 'todos' && st !== f.status) return;
-        if (f.q) {
-          const q = f.q;
-          const hit = p.name.toLowerCase().includes(q) || v.sku.toLowerCase().includes(q) || v.size.toLowerCase() === q;
-          if (!hit) return;
-        }
-        rows.push({ p, v, st });
-      });
+      const st = Store.productStatus(p);
+      if (f.status !== 'todos' && st !== f.status) return;
+      if (q && !(p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q) ||
+        p.variants.some(v => v.sku.toLowerCase().includes(q) || v.size.toLowerCase() === q))) return;
+      groups.push({ p, st, total: p.variants.reduce((s, v) => s + v.stock, 0), coming: Store.productOnOrder(p) });
     });
-    const rank = { agotado: 0, bajo: 1, ok: 2 };
-    const si = s => SEED.sizeScale.indexOf(s);
-    rows.sort((a, b) => (rank[a.st] - rank[b.st]) || a.p.name.localeCompare(b.p.name) || si(a.v.size) - si(b.v.size));
-    return rows;
+    const rank = { agotado: 0, bajo: 1, sincargar: 2, ok: 3, inactivo: 4 };
+    if (f.sort === 'atencion') groups.sort((x, y) => (rank[x.st] - rank[y.st]) || x.p.name.localeCompare(y.p.name));
+    else groups.sort((x, y) => x.p.name.localeCompare(y.p.name));
+    return groups;
   },
 
   inventoryHTML() {
     const f = this.f.inv;
-    const rows = this.inventoryRows();
-    const totalValue = rows.reduce((s, r) => s + r.v.stock * r.p.cost, 0);
-    const totalUnits = rows.reduce((s, r) => s + r.v.stock, 0);
-    const low = rows.filter(r => r.st === 'bajo').length;
+    const groups = this.inventoryGroups();
+    const m = Store.metrics();
+    const totalValue = groups.reduce((s, g) => s + g.p.variants.reduce((x, v) => x + v.stock * g.p.cost, 0), 0);
+    const totalUnits = groups.reduce((s, g) => s + g.total, 0);
+    const attention = groups.filter(g => g.st === 'bajo' || g.st === 'agotado').length;
     const shared = Store.products.filter(p => p.stores.length > 1).length;
 
     return this.head(
@@ -327,10 +328,10 @@ const Admin = {
        <button class="btn btn-primary btn-sm" id="invMove">${I18N.t('adm.inv.newMovement')}</button>`
     ) + `
     <div class="kpi-grid">
-      <div class="kpi kpi-principal"><div class="kpi-label">${I18N.t('adm.inv.listedSkus')}</div><div class="kpi-value">${rows.length}</div><div class="kpi-foot">${I18N.t('adm.inv.ofActive', { n: Store.metrics().skuCount })}</div></div>
+      <div class="kpi kpi-principal"><div class="kpi-label">${I18N.t('adm.inv.listedSkus')}</div><div class="kpi-value">${groups.length}</div><div class="kpi-foot">${I18N.t('adm.inv.ofActive', { n: Store.products.filter(p => p.active && !Store.isKit(p)).length })}</div></div>
       <div class="kpi"><div class="kpi-label">${I18N.t('adm.inv.unitsInStock')}</div><div class="kpi-value">${UI.num(totalUnits)}</div><div class="kpi-foot">${I18N.t('adm.inv.sharedFoot', { n: shared })}</div></div>
       <div class="kpi"><div class="kpi-label">${I18N.t('adm.inv.costValue')}</div><div class="kpi-value">${UI.money0(totalValue)}</div><div class="kpi-foot">${I18N.t('adm.inv.tiedCapital')}</div></div>
-      <div class="kpi ${low ? 'kpi-alerta' : ''}"><div class="kpi-label">${I18N.t('adm.inv.belowMin')}</div><div class="kpi-value">${low}</div><div class="kpi-foot">${I18N.t('adm.inv.needsRestock')}</div></div>
+      <div class="kpi ${attention ? 'kpi-alerta' : ''}"><div class="kpi-label">${I18N.t('adm.inv.belowMin')}</div><div class="kpi-value">${attention}</div><div class="kpi-foot">${I18N.t('adm.inv.needsRestock', { n: m.lowCount + m.outCount })}</div></div>
     </div>
 
     <div class="card">
@@ -348,49 +349,49 @@ const Admin = {
           <option value="agotado"${f.status === 'agotado' ? ' selected' : ''}>${I18N.t('adm.inv.outOfStock')}</option>
           <option value="sincargar"${f.status === 'sincargar' ? ' selected' : ''}>${I18N.t('stock.sincargar')}</option>
         </select>
+        <select class="select" id="invSort">
+          <option value="nombre"${f.sort !== 'atencion' ? ' selected' : ''}>${I18N.t('adm.inv.sortName')}</option>
+          <option value="atencion"${f.sort === 'atencion' ? ' selected' : ''}>${I18N.t('adm.inv.sortAttention')}</option>
+        </select>
       </div>
-
       <div class="card-body flush">
-        ${rows.length ? `
-        <div class="table-wrap">
-          <table class="data">
-            <thead><tr>
-              <th>${I18N.t('adm.inv.colProductVariant')}</th><th>${I18N.t('adm.inv.colSku')}</th><th>${I18N.t('adm.inv.colStores')}</th>
-              <th class="right">${I18N.t('adm.inv.colStock')}</th><th class="right">${I18N.t('adm.inv.colMin')}</th><th>${I18N.t('adm.inv.colStatus')}</th>
-              <th class="right">${I18N.t('adm.inv.colCostValue')}</th><th class="right">${I18N.t('adm.inv.colActions')}</th>
-            </tr></thead>
-            <tbody>
-              ${rows.slice(0, 300).map(({ p, v, st }) => `
-                <tr>
-                  <td>
-                    <div class="cell-flex">
-                      ${UI.thumb(p)}
-                      <div>
-                        <div class="cell-main">${UI.esc(p.name)}</div>
-                        <div class="cell-sub">${I18N.t('shop.size')} <b>${UI.esc(UI.sizeLabel(v.size))}</b> · ${I18N.t('kind.' + p.kind)}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td class="mono tiny">${UI.esc(v.sku)}</td>
-                  <td><div class="tags">${UI.storeTags(p)}</div></td>
-                  <td class="right">
-                    <div style="font-weight:680;font-size:15px">${v.stock}</div>
-                    ${UI.stockBar(v.stock, p.minStock)}
-                    ${(n => n ? `<div class="cell-sub po-coming">${I18N.t('adm.po.comingN', { n })}</div>` : '')(Store.onOrder(v.id))}
-                  </td>
-                  <td class="right muted">${p.minStock}</td>
-                  <td>${UI.stockBadge(st)}</td>
-                  <td class="right mono">${UI.money(v.stock * p.cost)}</td>
-                  <td class="right nowrap">
-                    <button class="btn btn-sm" data-in="${v.id}" title="${I18N.t('adm.inv.entryTitle')}">${I18N.t('adm.inv.entryBtn')}</button>
-                    <button class="btn btn-sm" data-out="${v.id}" title="${I18N.t('adm.inv.exitTitle')}" ${v.stock <= 0 ? 'disabled' : ''}>${I18N.t('adm.inv.exitBtn')}</button>
-                  </td>
-                </tr>`).join('')}
-            </tbody>
-          </table>
-        </div>` : UI.empty(I18N.t('adm.inv.emptyTitle'), I18N.t('adm.inv.emptyBody'))}
+        <p class="inv-hint">${I18N.t('adm.inv.sizeHint')}</p>
+        ${groups.length ? `<div class="inv-list">${groups.map(g => this.inventoryGroupHTML(g)).join('')}</div>`
+          : UI.empty(I18N.t('adm.inv.emptyTitle'), I18N.t('adm.inv.emptyBody'))}
       </div>
     </div>`;
+  },
+
+  inventoryGroupHTML({ p, st, total, coming }) {
+    return `
+      <div class="inv-group" data-inv="${p.id}">
+        <div class="inv-head">
+          ${UI.thumb(p)}
+          <div class="inv-title">
+            <div class="cell-main">${UI.esc(p.name)}</div>
+            <div class="cell-sub">${I18N.t('kind.' + p.kind)} · <span class="tags">${UI.storeTags(p)}</span> · <span class="mono">${UI.esc(p.sku)}</span></div>
+          </div>
+          <div class="inv-total">
+            <b>${UI.num(total)}</b><span>${I18N.t('adm.inv.unitsShort')}</span>
+            ${coming ? `<span class="po-coming">${I18N.t('adm.po.comingN', { n: coming })}</span>` : ''}
+          </div>
+          ${UI.stockBadge(st)}
+          <div class="inv-actions">
+            <button class="btn btn-sm btn-primary" data-count="${p.id}">${I18N.t('adm.inv.countBtn')}</button>
+            <button class="btn btn-sm" data-edit-product="${p.id}">${I18N.t('adm.inv.editBtn')}</button>
+          </div>
+        </div>
+        <div class="size-grid" role="group" aria-label="${UI.esc(p.name)}">
+          ${p.variants.map(v => {
+            const vs = Store.variantStatus(p, v), inc = Store.onOrder(v.id);
+            return `<button type="button" class="size-cell ${vs}" data-size="${v.id}" title="${UI.esc(p.name)} · ${UI.esc(UI.sizeLabel(v.size))} · ${I18N.t('stock.' + vs)}">
+              <span class="sz">${UI.esc(UI.sizeLabel(v.size))}</span>
+              <span class="qty">${vs === 'sincargar' ? '—' : v.stock}</span>
+              ${inc ? `<span class="inc">+${inc}</span>` : ''}
+            </button>`;
+          }).join('')}
+        </div>
+      </div>`;
   },
 
   inventoryBind() {
@@ -398,12 +399,56 @@ const Admin = {
     this.bindSelect('invStatus', this.f.inv, 'status', 'inventory');
     this.bindSelect('invStore', this.f.inv, 'store', 'inventory');
     this.bindSelect('invKind', this.f.inv, 'kind', 'inventory');
+    this.bindSelect('invSort', this.f.inv, 'sort', 'inventory');
     document.getElementById('invMove').onclick = () => this.movementForm();
     document.getElementById('invExport').onclick = () => this.exportInventory();
     document.getElementById('invImport').onclick = () => this.stockImportForm();
+    document.querySelectorAll('[data-size]').forEach(b => b.onclick = () => this.movementForm(b.dataset.size, 'entrada'));
+    document.querySelectorAll('[data-count]').forEach(b => b.onclick = () => this.countForm(b.dataset.count));
+    document.querySelectorAll('[data-edit-product]').forEach(b => b.onclick = () => this.productForm(b.dataset.editProduct));
+  },
 
-    document.querySelectorAll('[data-in]').forEach(b  => b.onclick = () => this.movementForm(b.dataset.in, 'entrada'));
-    document.querySelectorAll('[data-out]').forEach(b => b.onclick = () => this.movementForm(b.dataset.out, 'salida'));
+  /** Conteo rápido de un uniforme: se escribe lo que hay por talla y cada diferencia queda como movimiento de conteo. */
+  countForm(productId) {
+    const p = Store.product(productId);
+    if (!p) return;
+    UI.modal(`
+      <div class="modal-head">
+        <div><h2>${I18N.t('adm.inv.countTitle', { name: UI.esc(p.name) })}</h2><p class="muted tiny" style="margin-top:2px">${I18N.t('adm.inv.countIntro')}</p></div>
+        ${UI.closeBtn()}
+      </div>
+      <div class="modal-body">
+        <div class="count-grid">
+          ${p.variants.map(v => {
+            const vs = Store.variantStatus(p, v);
+            return `<label class="count-cell">
+              <span class="sz">${UI.esc(UI.sizeLabel(v.size))}</span>
+              <input class="input" type="number" min="0" step="1" inputmode="numeric" data-cnt="${v.id}" value="${vs === 'sincargar' ? '' : v.stock}" placeholder="${vs === 'sincargar' ? '—' : '0'}" aria-label="${UI.esc(p.name)} ${UI.esc(UI.sizeLabel(v.size))}">
+              <small>${vs === 'sincargar' ? I18N.t('adm.inv.notCounted') : I18N.t('adm.inv.nowN', { n: v.stock })}</small>
+            </label>`;
+          }).join('')}
+        </div>
+        <div class="err-msg" id="cntErr"></div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn" onclick="UI.closeModal()">${I18N.t('ui.cancel')}</button>
+        <button class="btn btn-primary" id="cntSave">${I18N.t('adm.inv.countSave')}</button>
+      </div>`);
+    const first = document.querySelector('[data-cnt]');
+    if (first) setTimeout(() => { first.focus(); first.select(); }, 60);
+    document.querySelectorAll('[data-cnt]').forEach((inp, i, all) => inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); if (all[i + 1]) { all[i + 1].focus(); all[i + 1].select(); } else document.getElementById('cntSave').click(); }
+    }));
+    document.getElementById('cntSave').onclick = () => {
+      const q = {};
+      document.querySelectorAll('[data-cnt]').forEach(inp => { if (inp.value.trim() !== '') q[inp.dataset.cnt] = inp.value; });
+      const r = Store.countProduct(p.id, q);
+      if (!r.ok) { const e = document.getElementById('cntErr'); e.textContent = r.error; e.classList.add('show'); return; }
+      UI.closeModal();
+      App.refreshAll();
+      if (r.failed.length) UI.toast('warn', I18N.t('adm.inv.countFail'), r.failed.join(', '));
+      else UI.toast(r.changed ? 'ok' : 'info', r.changed ? I18N.t('adm.inv.countDone', { n: r.changed }) : I18N.t('adm.inv.countNone'), r.changed ? r.ref : '');
+    };
   },
 
   /* ---------- Importar inventario desde Excel ----------

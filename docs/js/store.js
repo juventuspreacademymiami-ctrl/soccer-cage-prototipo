@@ -1406,6 +1406,31 @@ const Store = {
     return { ok: true, added, skipped };
   },
 
+  /** Conteo físico de un uniforme: cada talla queda en lo contado; la diferencia se registra como movimiento. */
+  countProduct(productId, qtyBySize) {
+    const p = this.product(productId);
+    if (!p || this.isKit(p)) return { ok: false, error: I18N.t('err.notAvailable') };
+    const d = new Date(this.nowISO());
+    const ref = 'CONTEO-' + this.dayKey(d).replace(/-/g, '') + '-' + String(d.getHours()).padStart(2, '0') + String(d.getMinutes()).padStart(2, '0');
+    let changed = 0;
+    const failed = [];
+    const wasSilent = this._silent;
+    this._silent = true;   // un solo guardado para todo el conteo
+    try {
+      p.variants.forEach(v => {
+        if (!(v.id in qtyBySize)) return;
+        const n = Math.floor(Number(qtyBySize[v.id]));
+        if (!Number.isFinite(n) || n < 0) { failed.push(v.sku); return; }
+        const diff = n - v.stock;
+        if (!diff) { v.loaded = true; return; }   // contado y confirmado, aunque no cambie
+        const r = this.applyMovement({ variantId: v.id, type: diff > 0 ? 'entrada' : 'salida', qty: Math.abs(diff), reason: 'count', ref });
+        if (r.ok) { changed++; v.loaded = true; } else failed.push(v.sku);
+      });
+    } finally { this._silent = wasSilent; }
+    this.save();
+    return { ok: true, changed, failed, ref };
+  },
+
   /* ---------- Importación de inventario (Excel / CSV) ----------
      rows: filas de la hoja, con encabezado. Se buscan las columnas SKU y
      Cantidad. Modo 'entrada' suma lo recibido; 'conteo' deja el stock en

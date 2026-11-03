@@ -193,7 +193,7 @@ const scenarios = {
     await page.fill('#invQ', '');
     await page.type('#invQ', 'camp jersey');
     ok(await page.locator('#invQ').inputValue() === 'camp jersey', 'la búsqueda conserva los espacios');
-    ok(await page.locator('#page-inventory tbody tr').count() === 14, 'filtra las 7 tallas de Camp Jersey y las 7 de ID Camp Jersey', await page.locator('#page-inventory tbody tr').count());
+    ok(await page.locator('#page-inventory .inv-group').count() === 2 && await page.locator('#page-inventory .size-cell').count() === 14, 'filtra Camp Jersey e ID Camp Jersey, con sus 7 tallas cada uno', await page.locator('#page-inventory .size-cell').count());
 
     // Entregas: inscripción sin talla → se completa y se entrega
     await page.click('.side-link[data-page="deliveries"]');
@@ -510,7 +510,7 @@ scenarios.compras = async function (browser) {
   await page.click('.side-link[data-page="inventory"]');
   await page.fill('#invQ', 'CAMP-JER-YXS');
   await page.waitForTimeout(400);
-  ok(/\+7 en camino/.test(await page.locator('#page-inventory tbody').innerText()), 'el inventario muestra lo que viene en camino');
+  ok(/\+7 en camino/.test(await page.locator('#page-inventory .inv-list').innerText()), 'el inventario muestra lo que viene en camino');
 
   // Configuración del aviso
   await page.click('.side-link[data-page="settings"]');
