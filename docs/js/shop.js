@@ -244,7 +244,8 @@ const Shop = {
   },
 
   accountForm(next) {
-    const demo = !App.storefront;
+    // Atajos de cuentas de prueba y nota de prototipo: solo en la demo local, nunca con datos reales.
+    const demo = !App.storefront && !Store.cloudMode;
     UI.modal(`
       <div class="modal-head">
         <h2>${I18N.t('acct.formTitle')}</h2>
@@ -273,7 +274,7 @@ const Shop = {
           <button class="chip chip-sm" data-fill="laura.gomez@example.com">${I18N.t('acct.demoWithKit')}</button>
           <button class="chip chip-sm" data-fill="daniel.kim@example.com">${I18N.t('acct.demoNoKit')}</button>
         </div>` : ''}
-        <p class="tiny muted" style="margin-top:12px;line-height:1.6">${I18N.t('acct.protoNote')}</p>
+        ${demo ? `<p class="tiny muted" style="margin-top:12px;line-height:1.6">${I18N.t('acct.protoNote')}</p>` : ''}
       </div>
       <div class="modal-foot">
         <button class="btn" onclick="UI.closeModal()">${I18N.t('ui.cancel')}</button>
