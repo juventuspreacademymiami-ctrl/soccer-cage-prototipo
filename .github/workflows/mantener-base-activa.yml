@@ -1,0 +1,23 @@
+# Mantiene despierta la base de datos del plan gratuito de Supabase.
+# El plan gratuito pausa el proyecto tras ~7 días sin actividad; esta tarea
+# lee el catálogo público cada 2 días (una consulta real a la base) para que
+# nunca se pause mientras dure la prueba. En el plan Pro no hace falta.
+name: Mantener la base activa
+
+on:
+  schedule:
+    - cron: '17 9 */2 * *'   # cada 2 días a las 09:17 UTC
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Leer el catálogo público (clave pública, sin secretos)
+        run: |
+          code=$(curl -s -o /tmp/r.json -w '%{http_code}' -X POST \
+            'https://abrjwvfeymexkwecjpxr.supabase.co/rest/v1/rpc/public_catalog' \
+            -H 'apikey: sb_publishable_rFqmTypStQiaEZu4lfaqCg__cziAcGE' \
+            -H 'Content-Type: application/json' -d '{}')
+          echo "HTTP $code"; head -c 200 /tmp/r.json; echo
+          test "$code" = "200"
