@@ -328,7 +328,7 @@ const Store = {
       phase: Math.max(...this.state.stores.map(x => x.phase || 0), 0) + 1,
       active: !!data.active, kitRequired: !!data.kitRequired,
       taxRate: round2(data.taxRate * 1000) / 1000, pickup: !!data.pickup, shipping: !!data.shipping,
-      shippingFlat: round2(data.shippingFlat), brand: data.brand || '#111111', logo: data.logo || null, cover: data.cover || null,
+      shippingFlat: round2(data.shippingFlat), brand: data.brand || '#111111', logo: data.logo || null, cover: data.cover || null, heroStyle: data.heroStyle || null,
       stripeAccount: data.stripeAccount || '', source: null,
       headline: String(data.headline || '').trim().slice(0, 80), blurb: String(data.blurb || '').trim().slice(0, 300)
     };

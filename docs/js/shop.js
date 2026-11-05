@@ -15,6 +15,14 @@ const Shop = {
   form: {},
 
   init() {
+    // Tipografías de las portadas; el panel no las necesita.
+    if (!App.panelOnly && !document.getElementById('sfxFonts')) {
+      const l = document.createElement('link');
+      l.id = 'sfxFonts';
+      l.rel = 'stylesheet';
+      l.href = 'https://fonts.googleapis.com/css2?family=Anton&family=Archivo:ital,wdth,wght@1,62..125,800..900&family=Bricolage+Grotesque:opsz,wght@12..96,700..800&display=swap';
+      document.head.appendChild(l);
+    }
     document.getElementById('cartBtn').onclick = () => this.openCart();
     document.getElementById('cartClose').onclick = () => this.closeCart();
     document.getElementById('cartOverlay').onclick = () => this.closeCart();
@@ -45,25 +53,21 @@ const Shop = {
     const root = document.getElementById('shopRoot');
     const st = this.store;
 
-    if (App.storefront && !st.active) {
-      root.innerHTML = `
-        <section class="hero">
-          <div class="hero-eyebrow">${UI.esc(st.name)}</div>
-          <h1>${I18N.t('shop.soonTitle')}</h1>
-          <p>${I18N.t('shop.soonBody')}</p>
-        </section>`;
+    // El equipo con sesión ve la tienda aunque no esté publicada, con un aviso.
+    const staffPreview = !st.active && Store.cloudMode && typeof Cloud !== 'undefined' && Cloud.signedIn;
+    this.applyTheme(st);
+    root.style.cssText = UI.brandVars(st);
+
+    if (App.storefront && !st.active && !staffPreview) {
+      root.innerHTML = this.heroHTML(st, [], [], true);
       return;
     }
 
     const kits = this.kits();
     const singles = this.singles();
-    const perk = (icon, title, sub) => `<li>${UI.icon(icon)}<span><b>${UI.esc(title)}</b><small>${UI.esc(sub)}</small></span></li>`;
-    const heroKey = I18N.has('store.' + st.id + '.title') ? 'store.' + st.id : 'store.generic';
     const cats = this.navCats();
-    const pickupLabel = this.pickupLabel();
     // El aviso de "vista previa" (catálogo importado, stock de ejemplo) solo aplica a la demo local.
 
-    root.style.cssText = UI.brandVars(st);
     root.innerHTML = `
       ${App.storefront ? '' : `
       <div class="store-tabs" role="tablist" aria-label="${I18N.t('shop.storesAria')}">
@@ -84,27 +88,10 @@ const Shop = {
           <div class="alert-body">${I18N.t(st.source ? 'shop.previewBodySource' : 'shop.previewBody', { source: UI.esc((st.source || '').replace(/^https?:\/\//, '').replace(/\/$/, '')) })}</div>
         </div>
       </div>` : ''}
+      ${staffPreview ? `<div class="alert alert-warn">${UI.infoIcon()}<div><div class="alert-body">${I18N.t('shop.staffPreview')}</div></div></div>` : ''}
 
-      <section class="sf-hero ${st.cover ? 'has-cover' : ''}">
-        ${st.cover ? `<img class="sf-hero-img" src="${UI.esc(st.cover)}" alt="">` : ''}
-        <div class="sf-hero-text">
-          <div class="sf-hero-brand">${UI.storeMark(st, 34)}<span>${UI.esc(st.name)} · ${I18N.t('shop.official')}</span></div>
-          <h1>${UI.esc(st.headline || I18N.t(heroKey + '.title'))}</h1>
-          <p>${UI.esc(st.blurb || I18N.t(heroKey + '.body'))}</p>
-          <div class="sf-hero-actions">
-            ${kits.length ? `<button class="btn btn-lg sf-hero-cta" data-go="shopKits">${I18N.t(st.kitRequired ? 'shop.heroBuyKit' : 'shop.heroKits')}</button>` : ''}
-            ${singles.length ? `<button class="btn btn-lg sf-hero-alt" data-go="shopSingles">${I18N.t('shop.heroSingles')}</button>` : ''}
-          </div>
-        </div>
-        ${!st.cover && kits.length ? `<div class="sf-hero-art" aria-hidden="true" style="background:${UI.mediaBg()}">${UI.media(kits[0])}</div>` : ''}
-      </section>
-
-      <ul class="sf-perks">
-        ${st.pickup ? perk('pin', pickupLabel, I18N.t('shop.perkPickupSub')) : ''}
-        ${st.shipping ? perk('truck', I18N.t('shop.perkShip'), I18N.t('shop.perkShipSub')) : ''}
-        ${perk('lock', I18N.t('shop.perkPayT'), I18N.t('shop.perkPaySub'))}
-        ${kits.length ? perk('shirt', I18N.t('shop.perkSizesT'), I18N.t('shop.perkSizesSub')) : ''}
-      </ul>
+      ${this.heroHTML(st, kits, singles, false)}
+      ${this.tickerHTML(st, kits.length > 0)}
 
       ${cats.length < 2 ? '' : `<nav class="sf-nav" aria-label="${I18N.t('shop.navAria')}">
         ${kits.length ? `<button class="sf-nav-link" data-go="shopKits">${I18N.t(st.kitRequired ? 'shop.navKitRequired' : 'shop.navKits')}</button>` : ''}
@@ -174,6 +161,85 @@ const Shop = {
     this.renderAccount();
     this.renderKits();
     this.renderGrid();
+  },
+
+  /* ---------- Portada: un diseño por tienda ----------
+     Verano (claro, con sol), Noche (oscuro, con brillo del color de la marca)
+     y Estadio (negro y dorado). Se elige en el panel; si no, cada tienda trae
+     el suyo. Título, texto y foto de portada salen de la tienda. */
+  THEMES: ['summer', 'neon', 'stadium'],
+
+  theme(st) {
+    if (st && this.THEMES.includes(st.heroStyle)) return st.heroStyle;
+    return { camps: 'summer', lasvegas: 'neon', athletum: 'stadium' }[st && st.id] || 'summer';
+  },
+
+  /** El fondo de toda la página acompaña a la portada. */
+  applyTheme(st) {
+    const app = document.getElementById('appShop');
+    if (app) app.dataset.theme = this.theme(st);
+  },
+
+  heroHTML(st, kits, singles, soon) {
+    const theme = this.theme(st);
+    const key = I18N.has('store.' + st.id + '.title') ? 'store.' + st.id : 'store.generic';
+    const title = soon ? I18N.t('shop.soonTitle') : st.headline || I18N.t(key + '.title');
+    const lead = soon ? I18N.t('shop.soonBody') : st.blurb || I18N.t(key + '.body');
+    const kit = kits[0];
+    const price = n => UI.money(n).replace(/\.00$/, '');
+    const save = kit ? Store.kitSavings(kit) : 0;
+
+    // Al lado del texto: la foto de portada si la hay; si no, los productos de la tienda.
+    let stage = '';
+    if (st.cover) stage = `<img class="sfx-cover" src="${UI.esc(st.cover)}" alt="">`;
+    else if (theme === 'neon') {
+      const picks = [...kits, ...singles.filter(p => p.featured), ...singles].filter((p, i, all) => all.indexOf(p) === i).slice(0, 3);
+      stage = picks.map((p, i) => `
+        <figure class="sfx-card sfx-card-${i + 1}">
+          <div class="sfx-card-img">${UI.media(p)}</div>
+          <figcaption><span>${UI.esc(p.name)}</span><b>${price(p.price)}</b></figcaption>
+        </figure>`).join('');
+    } else if (kit || singles[0]) stage = `<div class="sfx-product">${UI.media(kit || singles[0])}</div>`;
+    const sticker = !soon && kit ? `
+      <div class="sfx-sticker"><span>
+        <small>${I18N.t('sfx.kitOfficial')}</small>
+        <b>${price(kit.price)}</b>
+        ${save ? `<em>${I18N.t('shop.kitSave', { amount: price(save) })}</em>` : ''}
+      </span></div>` : '';
+
+    return `
+      <section class="sf-hero sfx sfx-${theme}${soon ? ' is-soon' : ''}">
+        <div class="sfx-word" aria-hidden="true">${UI.esc((st.short || st.name).toUpperCase())}</div>
+        <div class="sfx-copy">
+          <div class="sfx-eyebrow">${UI.storeMark(st, 26)}<span>${UI.esc(st.name)} · ${I18N.t('shop.official')}</span></div>
+          <h1${title.length > 34 ? ' class="is-long"' : ''}>${UI.esc(title)}</h1>
+          <p>${UI.esc(lead)}</p>
+          ${soon ? '' : `<div class="sf-hero-actions">
+            ${kits.length ? `<button class="btn btn-lg sf-hero-cta" data-go="shopKits">${I18N.t(st.kitRequired ? 'shop.heroBuyKit' : 'shop.heroKits')}${UI.icon('arrowRight')}</button>` : ''}
+            ${singles.length ? `<button class="btn btn-lg sf-hero-alt" data-go="shopSingles">${I18N.t('shop.heroSingles')}</button>` : ''}
+          </div>`}
+        </div>
+        ${stage ? `<div class="sfx-stage" aria-hidden="true">${stage}${sticker}</div>` : ''}
+      </section>`;
+  },
+
+  /** Cinta bajo la portada con lo que la tienda ofrece de verdad (entrega, pago, tallas). */
+  tickerHTML(st, hasKits) {
+    const items = [
+      st.pickup ? [this.pickupLabel(), I18N.t('shop.perkPickupSub')] : null,
+      st.shipping ? [I18N.t('shop.perkShip'), I18N.t('shop.perkShipSub')] : null,
+      [I18N.t('shop.perkPayT'), I18N.t('shop.perkPaySub')],
+      hasKits ? [I18N.t('shop.perkSizesT'), I18N.t('shop.perkSizesSub')] : null
+    ].filter(Boolean);
+    const li = items.map(([t, d]) => `<li><b>${UI.esc(t)}</b><span>${UI.esc(d)}</span></li>`).join('');
+    // La segunda copia solo sirve para que la cinta corra sin cortes.
+    return `
+      <div class="sfx-ticker">
+        <div class="sfx-ticker-track">
+          <ul class="sfx-ticker-row">${li}</ul>
+          <ul class="sfx-ticker-row" aria-hidden="true">${li}${li}</ul>
+        </div>
+      </div>`;
   },
 
   /** Cómo funciona y preguntas frecuentes: lo que un papá pregunta antes de comprar.

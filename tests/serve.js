@@ -11,7 +11,14 @@ http.createServer((req, res) => {
   const fp = path.join(ROOT, p);
   if (!fp.startsWith(path.normalize(ROOT))) { res.writeHead(403); return res.end(); }
   fs.readFile(fp, (err, data) => {
-    if (err) { res.writeHead(404); return res.end('not found'); }
+    if (err) {
+      // Como Cloudflare Pages: una ruta sin archivo (/camps, /panel) devuelve la página.
+      if (!path.extname(p)) return fs.readFile(path.join(ROOT, 'index.html'), (e2, html) => {
+        res.writeHead(200, { 'Content-Type': mime['.html'], 'Cache-Control': 'no-store' });
+        res.end(html);
+      });
+      res.writeHead(404); return res.end('not found');
+    }
     res.writeHead(200, { 'Content-Type': mime[path.extname(fp).toLowerCase()] || 'application/octet-stream', 'Cache-Control': 'no-store' });
     res.end(data);
   });

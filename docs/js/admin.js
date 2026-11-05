@@ -2400,10 +2400,11 @@ const Admin = {
   /* ============================================================
      TIENDAS — tres canales sobre el mismo inventario
      ============================================================ */
-  /** Enlace público de la tienda: su dominio propio si está configurado; si no, el sitio con ?store=. */
+  /** Enlace público de la tienda: su dominio propio si está configurado; si no, el sitio con /camps. */
   storeUrl(id) {
     const host = Object.keys(window.SOCCERCAGE_HOSTS || {}).find(h => window.SOCCERCAGE_HOSTS[h] === id);
-    return host ? 'https://' + host + '/' : location.origin + location.pathname + '?store=' + id;
+    const demo = new URLSearchParams(location.search).get('modo') === 'demo' ? '?modo=demo' : '';
+    return host ? 'https://' + host + '/' : location.origin + '/' + id + demo;
   },
 
   storesHTML() {
@@ -2492,6 +2493,8 @@ const Admin = {
     });
 
     document.querySelectorAll('[data-open-store]').forEach(b => b.onclick = () => {
+      // El panel va aparte de las tiendas: la tienda se abre en otra pestaña.
+      if (App.panelOnly) { window.open(this.storeUrl(b.dataset.openStore), '_blank', 'noopener'); return; }
       Store.setStore(b.dataset.openStore);
       App.setMode('shop');
     });
@@ -2549,6 +2552,13 @@ const Admin = {
               <label for="sfBlurb">${I18N.t('adm.stores.blurb')}</label>
               <textarea class="input" id="sfBlurb" rows="3" maxlength="300" placeholder="${UI.esc(I18N.t((s && I18N.has('store.' + s.id + '.body') ? 'store.' + s.id : 'store.generic') + '.body'))}">${UI.esc(v('blurb', '') || '')}</textarea>
               <div class="hint">${I18N.t('adm.stores.textsHint')}</div>
+            </div>
+            <div class="field">
+              <label for="sfHero">${I18N.t('adm.stores.heroStyle')}</label>
+              <select class="select" id="sfHero">
+                ${Shop.THEMES.map(t => `<option value="${t}"${Shop.theme(s || {}) === t ? ' selected' : ''}>${I18N.t('sfx.theme.' + t)}</option>`).join('')}
+              </select>
+              <div class="hint">${I18N.t('adm.stores.heroStyleHint')}</div>
             </div>
             <div class="field">
               <label>${I18N.t('adm.stores.cover')}</label>
@@ -2652,7 +2662,7 @@ const Admin = {
         pickup: document.getElementById('sfPickup').checked,
         shipping: document.getElementById('sfShipping').checked,
         active: document.getElementById('sfActive').checked,
-        stripeAccount: val('sfStripe'), brand: d.brand, logo: d.logo, cover: d.cover,
+        stripeAccount: val('sfStripe'), brand: d.brand, logo: d.logo, cover: d.cover, heroStyle: val('sfHero'),
         headline: val('sfHeadline'), blurb: val('sfBlurb')
       };
       const err = document.getElementById('sfErr');

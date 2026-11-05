@@ -109,7 +109,8 @@ async function newPage(browser, fake, opts = {}) {
 }
 
 const login = async (page, email, pass) => {
-  await page.click('#btnAdmin');
+  // En /panel sin sesión el formulario ya está abierto; si se cerró, se abre desde la entrada.
+  if (!await page.locator('#lgGo').count()) await page.click('#panelGate button');
   await page.waitForSelector('#lgGo');
   await page.fill('#lgEmail', email);
   await page.fill('#lgPass', pass);

@@ -63,7 +63,7 @@ const scenarios = {
     await page.waitForLoadState('networkidle');
     ok(await page.locator('.kit-card').count() === 2 && await page.locator('.p-card').count() === 13, 'Las Vegas: 2 kits y 13 piezas');
     ok(await page.locator('.sf-nav .sf-nav-link').count() >= 3, 'Las Vegas muestra el menú Kit · Jugador · Goalkeeper');
-    ok(!/Recoger/.test(await page.locator('.sf-perks').innerText()), 'Las Vegas no ofrece recoger en la academia: solo USPS');
+    ok(!/Recoger/.test(await page.locator('.sfx-ticker-row').first().innerText()), 'Las Vegas no ofrece recoger en la academia: solo USPS');
     await page.shot('03-lasvegas', true);
 
     await page.click('.kit-card[data-kit="lv-kit-competitive"]');
@@ -299,9 +299,9 @@ const scenarios = {
     ok(ov2 <= 0, 'sin desborde horizontal tras la compra', ov2);
 
     // Tienda aún no publicada
-    await page.goto(BASE + '?store=lasvegas');
-    await page.waitForSelector('.hero');
-    ok(await page.locator('.kit-card').count() === 0, 'una tienda no publicada muestra "Muy pronto"', await page.locator('.hero h1').innerText());
+    await page.goto(BASE + 'lasvegas');
+    await page.waitForSelector('.sf-hero.is-soon');
+    ok(await page.locator('.kit-card').count() === 0, 'una tienda no publicada muestra "Muy pronto"', await page.locator('.sf-hero h1').innerText());
 
     // Panel en teléfono
     await page.goto(BASE);
@@ -321,8 +321,8 @@ const scenarios = {
     await page.goto(BASE);
     await page.waitForSelector('.kit-card');
     ok(await page.locator('.sf-hero').count() === 1 && await page.locator('.sf-nav').count() === 0, 'Summer Camp abre con la franja de marca, sin menú de una sola sección');
-    ok(await page.locator('.sf-hero-cta').count() === 1 && await page.locator('.sf-perks li').count() === 4 && await page.locator('.sf-faq details').count() === 4,
-      'portada con botón de compra, 4 beneficios y 4 preguntas frecuentes');
+    ok(await page.locator('.sf-hero-cta').count() === 1 && await page.locator('.sfx-ticker-row').first().locator('li').count() === 4 && await page.locator('.sf-faq details').count() === 4,
+      'portada con botón de compra, 4 beneficios en la cinta y 4 preguntas frecuentes');
     await page.click('.sf-hero-cta');
     await page.waitForTimeout(700);
     ok(await page.evaluate(() => { const r = document.getElementById('shopKits').getBoundingClientRect(); return r.top < innerHeight / 2; }), '«Comprar el kit» lleva al kit');
@@ -528,6 +528,47 @@ scenarios.compras = async function (browser) {
   await page.context().close();
 };
 
+/* Un enlace por tienda y el panel aparte (petición de David del 2026-11-04) */
+scenarios.enlaces = async function (browser) {
+  const page = await newPage(browser, { viewport: { width: 1366, height: 900 } });
+  await page.goto(BASE);
+  await page.waitForSelector('.store-tab');
+  await page.evaluate(() => Store.stores.forEach(s => Store.saveStore(s.id, { active: true })));
+  const temas = { camps: 'summer', lasvegas: 'neon', athletum: 'stadium' };
+  for (const id of Object.keys(temas)) {
+    await page.goto(BASE + id);
+    await page.waitForSelector('.sf-hero');
+    const v = await page.evaluate(() => ({ sf: App.storefront, tabs: document.querySelectorAll('.store-tab').length,
+      sw: getComputedStyle(document.querySelector('.mode-switch')).display, theme: document.getElementById('appShop').dataset.theme }));
+    ok(v.sf === id && v.tabs === 0 && v.sw === 'none', `/${id} abre solo su tienda, sin selector ni panel`, v);
+    ok(v.theme === temas[id] && await page.locator('.sfx-' + temas[id]).count() === 1, `/${id} tiene su propio diseño de portada (${temas[id]})`, v.theme);
+  }
+  await page.goto(BASE + 'panel');
+  await page.waitForSelector('#appAdmin.active #page-dashboard');
+  const p = await page.evaluate(() => ({ panel: App.panelOnly, shop: document.querySelector('#appShop.active') !== null,
+    sw: getComputedStyle(document.querySelector('.mode-switch')).display, cart: getComputedStyle(document.getElementById('cartBtn')).display }));
+  ok(p.panel && !p.shop && p.sw === 'none' && p.cart === 'none', '/panel es solo el panel: sin pestaña de tienda ni carrito', p);
+  await page.click('.side-link[data-page="stores"]');
+  const popup = page.waitForEvent('popup');
+  await page.click('[data-open-store="camps"]');
+  const tab = await popup;
+  ok(/\/camps$/.test(tab.url()) && await page.evaluate(() => App.mode) === 'admin', '«Ver tienda» abre la tienda en otra pestaña y el panel se queda', tab.url());
+  await tab.close();
+  // El diseño se cambia desde el panel.
+  await page.click('[data-edit-store="camps"]');
+  await page.selectOption('#sfHero', 'neon');
+  await page.click('#sfSave');
+  ok(await page.evaluate(() => Store.storeCfg('camps').heroStyle) === 'neon', 'el diseño de la portada se elige en el panel');
+  await page.goto(BASE + 'camps');
+  await page.waitForSelector('.sfx-neon');
+  ok(true, 'y la tienda lo usa');
+  await page.goto(BASE + 'no-existe');
+  await page.waitForSelector('.sf-missing');
+  ok(await page.locator('#appAdmin.active').count() === 0, 'una ruta que no es tienda avisa, sin abrir el panel');
+  ok(page.issues.length === 0, 'sin errores ni advertencias en consola', page.issues);
+  await page.context().close();
+};
+
 /* Dominio propio por tienda (petición de Eduardo del 2026-11-02) */
 scenarios.dominios = async function (browser) {
   const ctx = await browser.newContext({ viewport: { width: 1366, height: 900 } });
@@ -557,7 +598,7 @@ scenarios.dominios = async function (browser) {
   await page.click('#btnAdmin');
   await page.click('.side-link[data-page="stores"]');
   const urls = await page.evaluate(() => [...document.querySelectorAll('.store-url')].map(e => e.textContent.trim()));
-  ok(urls.some(u => u === 'https://store.athletumfc.com/') && urls.some(u => u === 'https://store.juventuscamps.com/') && urls.some(u => /\?store=lasvegas$/.test(u)), 'cada tienda enlaza a su dominio propio; sin dominio, al sitio con ?store=', urls);
+  ok(urls.some(u => u === 'https://store.athletumfc.com/') && urls.some(u => u === 'https://store.juventuscamps.com/') && urls.some(u => /:8790\/lasvegas$/.test(u)), 'cada tienda enlaza a su dominio propio; sin dominio, a su ruta (/lasvegas)', urls);
   ok(page.issues.length === 0, 'sin errores en consola', page.issues);
   await ctx.close();
 };

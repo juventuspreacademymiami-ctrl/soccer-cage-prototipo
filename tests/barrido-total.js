@@ -159,9 +159,8 @@ async function sweep(page, label) {
     console.log(`\n== Base compartida · ${v.name} ==`);
     const fake = fakeSupabase();
     page = await newCloudPage(browser, fake, v.opts);
-    await page.goto(BASE);
-    await page.waitForSelector('.store-tab');
-    await page.evaluate(() => App.loginForm());
+    await page.goto(BASE + 'panel');
+    await page.waitForSelector('#lgGo');
     await page.fill('#lgEmail', 'admin@soccercage.com');
     await page.fill('#lgPass', 'clave-segura-123');
     await page.click('#lgGo');

@@ -26,11 +26,11 @@ const { fakeSupabase, newPage, login, API } = require('./fake-supabase');
   console.log('\n== Sin sesión: tienda pública y panel cerrado ==');
   let page = await newPage(browser, fake);
   await page.goto(BASE);
-  await page.waitForSelector('.store-tab');
-  ok(fake.db.calls.includes('rpc:public_catalog') && !fake.db.calls.includes('rpc:load_state'), 'el visitante solo pide el catálogo público');
-  await page.click('#btnAdmin');
   await page.waitForSelector('#lgGo');
-  ok(await page.locator('#appAdmin.active').count() === 0, 'el panel pide iniciar sesión');
+  ok(new URL(page.url()).pathname === '/panel', 'la raíz del sitio lleva al panel', page.url());
+  ok(fake.db.calls.includes('rpc:public_catalog') && !fake.db.calls.includes('rpc:load_state'), 'sin sesión solo se pide el catálogo público');
+  ok(await page.locator('#appAdmin.active').count() === 0 && await page.locator('#appShop.active').count() === 0 && await page.locator('#panelGate').count() === 1,
+    'el panel pide iniciar sesión y no muestra la tienda detrás');
   await page.fill('#lgPass', 'secreto');
   await page.click('.pw-eye');
   ok(await page.getAttribute('#lgPass', 'type') === 'text' && await page.inputValue('#lgPass') === 'secreto', 'el ojo muestra la contraseña escrita');
@@ -155,8 +155,9 @@ const { fakeSupabase, newPage, login, API } = require('./fake-supabase');
 
   console.log('\n== Cuenta sin acceso ==');
   page = await newPage(browser, fake);
-  await page.goto(BASE);
-  await page.waitForSelector('.store-tab');
+  await page.goto(BASE + '?panel=settings');
+  await page.waitForSelector('#lgGo');
+  ok(new URL(page.url()).pathname === '/panel' && new URL(page.url()).search === '?panel=settings', 'los enlaces viejos (?panel=…) llegan al panel', page.url());
   await login(page, 'intruso@gmail.com', 'intruso-789');
   await page.waitForSelector('#lgErr.show');
   ok(/no tiene acceso/.test(await page.locator('#lgErr').innerText()) && await page.evaluate(() => !Cloud.session), 'una cuenta que no está en el equipo no entra y se cierra su sesión');
@@ -164,8 +165,8 @@ const { fakeSupabase, newPage, login, API } = require('./fake-supabase');
 
   console.log('\n== Eduardo (equipo, no admin) ==');
   page = await newPage(browser, fake);
-  await page.goto(BASE);
-  await page.waitForSelector('.store-tab');
+  await page.goto(BASE + 'panel');
+  await page.waitForSelector('#lgGo');
   await login(page, 'eduardo@soccercage.com', 'otra-clave-456');
   await page.waitForSelector('#appAdmin.active #page-dashboard .kpi');
   // Lo primero que hará: cambiar la contraseña temporal.
@@ -193,6 +194,7 @@ const { fakeSupabase, newPage, login, API } = require('./fake-supabase');
   page = await newPage(browser, fake, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   await page.goto(BASE + '?store=camps');
   await page.waitForSelector('.kit-card');
+  ok(new URL(page.url()).pathname === '/camps', 'el enlace viejo ?store=camps lleva a /camps', page.url());
   const leaked = await page.evaluate(() => ({ cost: Store.products.some(p => p.cost !== undefined), orders: Store.orders.length, customers: Store.customers.length }));
   ok(!leaked.cost && leaked.orders === 0 && leaked.customers === 0, 'el visitante no recibe costos, pedidos ni clientes', leaked);
   ok(await page.locator('.sf-hero h1').innerText() === 'Uniformes del Summer Camp 2027', 'la tienda pública muestra el título editado');

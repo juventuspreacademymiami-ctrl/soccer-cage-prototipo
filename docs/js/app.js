@@ -1,10 +1,12 @@
 /* ============================================================
    SOCCER CAGE — Arranque y conmutación Tienda ⇄ Panel ⇄ Análisis
 
-   Dos formas de entrar:
-   · Demo completa (sin parámetros): las tres vistas y las tres tiendas.
-   · Tienda pública (?store=camps): solo la tienda de ese canal, sin
-     panel. Es el enlace del QR que se imprime para los campamentos.
+   Enlaces:
+   · Cada tienda en su ruta (/camps, /lasvegas, /athletum) o en su dominio
+     propio: solo la tienda de ese canal, sin panel. ?store=camps sigue valiendo.
+   · El panel en /panel, aparte de las tiendas.
+   · En la base compartida la raíz lleva al panel; en la demo local la raíz
+     sigue siendo la demo completa (las tres tiendas y el panel juntos).
 
    Y dos lugares para los datos:
    · Demo local (js/config.js sin activar, o ?modo=demo): todo en
@@ -20,9 +22,28 @@ const App = {
 
   init() {
     I18N.init();
-    if (typeof Cloud !== 'undefined' && Cloud.init()) { this.bootCloud(); return; }
+    this.route();
+    const cloud = typeof Cloud !== 'undefined' && Cloud.init();
+    // En la base compartida la raíz no es una tienda: lleva a la tienda de ?store= o al panel.
+    // Se conservan la consulta y el #token de los correos de invitación y recuperación.
+    if (cloud && !this.path && !this.hostStore) {
+      const q = new URLSearchParams(location.search), s = (q.get('store') || '').toLowerCase();
+      q.delete('store');
+      const rest = (q.toString() ? '?' + q : '') + location.hash;
+      location.replace(/^[a-z0-9-]+$/.test(s) ? '/' + s + rest : '/panel' + rest);
+      return;
+    }
+    if (cloud) { this.bootCloud(); return; }
     Store.load();
     this.start();
+  },
+
+  /** Lee la ruta: /panel es el panel; /camps, la tienda camps; el dominio propio manda sobre todo. */
+  route() {
+    const seg = location.pathname.split('/').filter(Boolean).pop() || '';
+    this.path = /^index\.html?$/i.test(seg) ? '' : decodeURIComponent(seg).toLowerCase();
+    this.panelOnly = this.path === 'panel';
+    this.hostStore = (window.SOCCERCAGE_HOSTS || {})[location.hostname.toLowerCase()] || null;
   },
 
   /* ---------- Arranque con base compartida ---------- */
@@ -119,14 +140,15 @@ const App = {
       if (e.key === 'soccercage_rev' && Store.syncFromStorage()) this.refreshAll();
     });
 
-    // La tienda se elige por el dominio (store.athletumfc.com → athletum) o por ?store=.
-    const hosts = window.SOCCERCAGE_HOSTS || {};
-    const wanted = hosts[location.hostname.toLowerCase()] || new URLSearchParams(location.search).get('store');
+    // La tienda se elige por el dominio (store.athletumfc.com → athletum), por la
+    // ruta (/camps) o por ?store=. /panel es solo el panel, sin tiendas.
+    const wanted = this.hostStore || (this.path && !this.panelOnly ? this.path : null) || new URLSearchParams(location.search).get('store');
     if (wanted && Store.storeCfg(wanted)) {
       this.storefront = wanted;
       Store.setStore(wanted);
       document.body.classList.add('storefront');
-    }
+    } else if (this.path && !this.panelOnly) { this.notFound(); return; }
+    if (this.panelOnly) document.body.classList.add('panel-only');
 
     this.medirScrollbar();
     this.applyStaticI18n();
@@ -157,13 +179,14 @@ const App = {
       Compare.init();
     }
     this.syncUser();
-    this.setMode('shop');   // deja la barra coherente desde el arranque
+    // ?panel=settings abre el panel directo en esa sección (enlaces de la lista de pendientes).
     const ir = new URLSearchParams(location.search).get('panel');
-    if (!this.storefront && ir && /^[a-z]+$/.test(ir) && document.getElementById('page-' + ir)) { this.pendingPage = ir; this.setMode('admin'); }
+    if (!this.storefront && ir && /^[a-z]+$/.test(ir) && document.getElementById('page-' + ir)) this.pendingPage = ir;
+    this.setMode(this.panelOnly || this.pendingPage ? 'admin' : 'shop');
 
     // Atajos de teclado para la demostración en vivo
     document.addEventListener('keydown', e => {
-      if (this.storefront || !e.altKey) return;
+      if (this.storefront || this.panelOnly || !e.altKey) return;
       // El análisis está oculto por ahora: sin atajo de teclado.
       const m = { '1': 'shop', '2': 'admin' }[e.key];
       if (m) { e.preventDefault(); this.setMode(m); }
@@ -179,7 +202,13 @@ const App = {
 
   setMode(mode) {
     if (this.storefront) mode = 'shop';
-    if (mode === 'admin' && Store.cloudMode && !Cloud.signedIn) { this.loginForm(); return; }
+    if (this.panelOnly) mode = 'admin';
+    if (mode === 'admin' && Store.cloudMode && !Cloud.signedIn) {
+      if (this.panelOnly) this.panelGate(true);
+      this.loginForm();
+      return;
+    }
+    this.panelGate(false);
     this.mode = mode;
 
     const vistas = {
@@ -219,6 +248,37 @@ const App = {
     // Al arrancar no hay nada que desplazar: evita un salto visible.
     if (this._arrancado) window.scrollTo({ top: 0 });
     this._arrancado = true;
+  },
+
+  /** /panel sin sesión: solo la entrada del panel, nunca la tienda detrás. */
+  panelGate(show) {
+    let el = document.getElementById('panelGate');
+    if (!show) { if (el) el.remove(); return; }
+    document.querySelectorAll('.app').forEach(a => a.classList.remove('active'));
+    if (el) return;
+    el = document.createElement('main');
+    el.id = 'panelGate';
+    el.className = 'panel-gate';
+    el.innerHTML = `<div class="panel-gate-box">
+        <div class="brand-mark">SC</div>
+        <h1>${I18N.t('panel.gateTitle')}</h1>
+        <p class="muted">${I18N.t('panel.gateBody')}</p>
+        <button class="btn btn-primary btn-lg" type="button">${I18N.t('cloud.loginBtn')}</button>
+      </div>`;
+    el.querySelector('button').onclick = () => this.loginForm();
+    document.querySelector('.topbar').after(el);
+  },
+
+  /** Ruta que no es ninguna tienda (/tienda-que-no-existe). */
+  notFound() {
+    document.body.classList.add('storefront');
+    this.applyStaticI18n();
+    ['cartBtn', 'acctBtn'].forEach(id => { document.getElementById(id).style.display = 'none'; });
+    document.getElementById('shopRoot').innerHTML = `
+      <section class="sf-missing">
+        <h1>${I18N.t('shop.notFoundTitle')}</h1>
+        <p>${I18N.t('shop.notFoundBody')}</p>
+      </section>`;
   },
 
   /* ---------- Sesión del equipo (base compartida) ---------- */
@@ -362,7 +422,7 @@ const App = {
     const st = this.storefront ? Store.storeCfg(this.storefront) : null;
     document.getElementById('brandName').textContent = st ? st.name : Store.settings.company;
     document.getElementById('brandSub').textContent = I18N.t(st ? 'shop.official' : 'nav.brandSub');
-    document.title = (st ? st.name : Store.settings.company) + ' — ' + I18N.t(st ? 'shop.official' : 'nav.brandSub');
+    document.title = (st ? st.name : Store.settings.company) + ' — ' + I18N.t(st ? 'shop.official' : this.panelOnly ? 'nav.admin' : 'nav.brandSub');
     const mark = document.getElementById('brandMark');
     if (st) mark.outerHTML = UI.storeMark(st, 30).replace('class="store-mark"', 'class="store-mark brand-mark" id="brandMark"');
     if (st) document.body.style.cssText = UI.brandVars(st);
