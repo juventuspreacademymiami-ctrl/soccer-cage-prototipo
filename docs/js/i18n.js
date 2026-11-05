@@ -1127,7 +1127,6 @@ const I18N = {
     'adm.stores.heroStyleHint': { es: 'Cada tienda puede tener su estilo. El título, el texto y la foto de portada se usan en cualquiera.', en: 'Each store can have its own style. The title, text and cover photo work with any of them.' },
     'shop.notFoundTitle': { es: 'Esta tienda no existe', en: "This store doesn't exist" },
     'shop.notFoundBody': { es: 'Revisa el enlace o pídeselo de nuevo a tu club.', en: 'Check the link or ask your club for it again.' },
-    'shop.staffPreview': { es: 'Vista previa del equipo: esta tienda no está publicada; los clientes ven «Muy pronto».', en: 'Team preview: this store is not published; customers see "Coming soon".' },
     'panel.gateTitle': { es: 'Panel de Soccer Cage', en: 'Soccer Cage panel' },
     'panel.gateBody': { es: 'Inventario, pedidos y tiendas. Solo para el equipo.', en: 'Inventory, orders and stores. Team only.' },
     'shop.heroBuyKit': { es: 'Comprar el kit', en: 'Shop the kit' },

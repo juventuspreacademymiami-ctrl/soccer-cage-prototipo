@@ -53,7 +53,7 @@ const Shop = {
     const root = document.getElementById('shopRoot');
     const st = this.store;
 
-    // El equipo con sesión ve la tienda aunque no esté publicada, con un aviso.
+    // El equipo con sesión ve la tienda aunque no esté publicada.
     const staffPreview = !st.active && Store.cloudMode && typeof Cloud !== 'undefined' && Cloud.signedIn;
     this.applyTheme(st);
     root.style.cssText = UI.brandVars(st);
@@ -90,7 +90,6 @@ const Shop = {
           <div class="alert-body">${I18N.t(st.source ? 'shop.previewBodySource' : 'shop.previewBody', { source: UI.esc((st.source || '').replace(/^https?:\/\//, '').replace(/\/$/, '')) })}</div>
         </div>
       </div>` : ''}
-      ${staffPreview ? `<div class="alert alert-warn">${UI.infoIcon()}<div><div class="alert-body">${I18N.t('shop.staffPreview')}</div></div></div>` : ''}
 
       ${this.heroHTML(st, kits, singles, false)}
       ${this.tickerHTML(st, kits.length > 0)}
