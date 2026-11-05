@@ -58,7 +58,9 @@ const Shop = {
     this.applyTheme(st);
     root.style.cssText = UI.brandVars(st);
 
-    if (App.storefront && !st.active && !staffPreview) {
+    const closed = App.storefront && !st.active && !staffPreview;
+    document.body.classList.toggle('sf-closed', !!closed);
+    if (closed) {
       root.innerHTML = this.heroHTML(st, [], [], true);
       return;
     }

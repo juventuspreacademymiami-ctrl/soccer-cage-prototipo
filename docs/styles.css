@@ -1727,6 +1727,10 @@ table.data tr.sub-row td { padding-top: 5px; padding-bottom: 5px; background: va
 }
 
 /* ---------- Verano: claro, con sol y el kit al centro ---------- */
+/* El fondo de la tienda llega hasta abajo aunque haya poco contenido ("Muy pronto"). */
+#appShop[data-theme] { min-height: calc(100vh - var(--nav-h)); }
+/* Tienda cerrada: sin carrito ni cuenta en la barra. */
+body.sf-closed #cartBtn, body.sf-closed #acctBtn { display: none !important; }
 #appShop[data-theme="summer"] { background: #fffaf0; }
 #appShop[data-theme="summer"] .sf-nav { background: #fffaf0; }
 .sfx-summer { background: #fff1c4; color: #111; }
