@@ -26,8 +26,13 @@ const { fakeSupabase, newPage, login, API } = require('./fake-supabase');
   console.log('\n== Sin sesión: tienda pública y panel cerrado ==');
   let page = await newPage(browser, fake);
   await page.goto(BASE);
+  await page.waitForSelector('.home-store');
+  ok(await page.locator('.home-store').count() === 3 && await page.locator('#appAdmin.active, #lgGo, .mode-switch:visible, #cartBtn:visible').count() === 0,
+    'la raíz muestra las tres tiendas para elegir, sin panel ni carrito');
+  ok(await page.getAttribute('.home-store >> nth=0', 'href') === '/camps', 'cada tienda enlaza a su ruta');
+  await page.shot('65-nube-inicio');
+  await page.goto(BASE + 'panel');
   await page.waitForSelector('#lgGo');
-  ok(new URL(page.url()).pathname === '/panel', 'la raíz del sitio lleva al panel', page.url());
   ok(fake.db.calls.includes('rpc:public_catalog') && !fake.db.calls.includes('rpc:load_state'), 'sin sesión solo se pide el catálogo público');
   ok(await page.locator('#appAdmin.active').count() === 0 && await page.locator('#appShop.active').count() === 0 && await page.locator('#panelGate').count() === 1,
     'el panel pide iniciar sesión y no muestra la tienda detrás');

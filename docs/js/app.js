@@ -5,8 +5,9 @@
    · Cada tienda en su ruta (/camps, /lasvegas, /athletum) o en su dominio
      propio: solo la tienda de ese canal, sin panel. ?store=camps sigue valiendo.
    · El panel en /panel, aparte de las tiendas.
-   · En la base compartida la raíz lleva al panel; en la demo local la raíz
-     sigue siendo la demo completa (las tres tiendas y el panel juntos).
+   · En la base compartida la raíz muestra las tiendas para elegir (sin
+     enlace al panel); en la demo local la raíz sigue siendo la demo
+     completa (las tres tiendas y el panel juntos).
 
    Y dos lugares para los datos:
    · Demo local (js/config.js sin activar, o ?modo=demo): todo en
@@ -24,14 +25,16 @@ const App = {
     I18N.init();
     this.route();
     const cloud = typeof Cloud !== 'undefined' && Cloud.init();
-    // En la base compartida la raíz no es una tienda: lleva a la tienda de ?store= o al panel.
-    // Se conservan la consulta y el #token de los correos de invitación y recuperación.
+    // En la base compartida la raíz muestra las tiendas. Los enlaces viejos siguen
+    // sirviendo: ?store= lleva a la tienda; ?panel= y los correos de invitación y
+    // recuperación (#access_token…) llevan al panel, con la consulta y el #token.
     if (cloud && !this.path && !this.hostStore) {
       const q = new URLSearchParams(location.search), s = (q.get('store') || '').toLowerCase();
       q.delete('store');
       const rest = (q.toString() ? '?' + q : '') + location.hash;
-      location.replace(/^[a-z0-9-]+$/.test(s) ? '/' + s + rest : '/panel' + rest);
-      return;
+      if (/^[a-z0-9-]+$/.test(s)) { location.replace('/' + s + rest); return; }
+      if (q.has('panel') || /access_token|error_description/.test(location.hash)) { location.replace('/panel' + rest); return; }
+      this.landing = true;
     }
     if (cloud) { this.bootCloud(); return; }
     Store.load();
@@ -149,6 +152,7 @@ const App = {
       document.body.classList.add('storefront');
     } else if (this.path && !this.panelOnly) { this.notFound(); return; }
     if (this.panelOnly) document.body.classList.add('panel-only');
+    if (this.landing) { this.home(); return; }
 
     this.medirScrollbar();
     this.applyStaticI18n();
@@ -267,6 +271,34 @@ const App = {
       </div>`;
     el.querySelector('button').onclick = () => this.loginForm();
     document.querySelector('.topbar').after(el);
+  },
+
+  /** Raíz del dominio de las tiendas: las tiendas para elegir. El panel no se enlaza. */
+  home() {
+    document.body.classList.add('storefront', 'sf-home');
+    Shop.loadFonts();
+    this.applyStaticI18n();
+    document.getElementById('brandName').textContent = I18N.t('home.brand');
+    document.getElementById('brandSub').textContent = I18N.t('home.brandSub');
+    document.title = I18N.t('home.brand') + ' — ' + I18N.t('home.title');
+    ['cartBtn', 'acctBtn'].forEach(id => { document.getElementById(id).style.display = 'none'; });
+    document.getElementById('langBtn').onclick = () => I18N.setLang(I18N.lang === 'es' ? 'en' : 'es');
+    const card = s => `
+      <a class="home-store home-${Shop.theme(s)}" href="/${UI.esc(s.id)}" style="${UI.brandVars(s)}">
+        <span class="home-store-top">
+          ${UI.storeMark(s, 44)}
+          <span class="home-badge ${s.active ? 'is-open' : ''}">${I18N.t(s.active ? 'home.open' : 'home.soon')}</span>
+        </span>
+        <span class="home-store-name">${UI.esc(s.name)}</span>
+        <span class="home-store-go">${I18N.t('home.enter')}${UI.icon('arrowRight')}</span>
+      </a>`;
+    document.getElementById('shopRoot').innerHTML = `
+      <section class="home-hero">
+        <h1>${I18N.t('home.title')}</h1>
+        <p>${I18N.t('home.body')}</p>
+      </section>
+      <div class="home-stores">${Store.stores.map(card).join('')}</div>
+      <p class="home-foot muted tiny">${I18N.t('home.foot')}</p>`;
   },
 
   /** Ruta que no es ninguna tienda (/tienda-que-no-existe). */
@@ -447,6 +479,7 @@ const App = {
 
   /** Repinta todo lo visible tras una mutación de datos o un cambio de idioma. */
   refreshAll() {
+    if (this.landing) { this.home(); return; }
     this.applyStaticI18n();
     Shop.render();
     Shop.renderCart();

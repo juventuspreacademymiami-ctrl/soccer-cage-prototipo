@@ -15,19 +15,22 @@ const Shop = {
   form: {},
 
   init() {
-    // Tipografías de las portadas; el panel no las necesita.
-    if (!App.panelOnly && !document.getElementById('sfxFonts')) {
-      const l = document.createElement('link');
-      l.id = 'sfxFonts';
-      l.rel = 'stylesheet';
-      l.href = 'https://fonts.googleapis.com/css2?family=Anton&family=Archivo:ital,wdth,wght@1,62..125,800..900&family=Bricolage+Grotesque:opsz,wght@12..96,700..800&display=swap';
-      document.head.appendChild(l);
-    }
+    if (!App.panelOnly) this.loadFonts();   // el panel no las necesita
     document.getElementById('cartBtn').onclick = () => this.openCart();
     document.getElementById('cartClose').onclick = () => this.closeCart();
     document.getElementById('cartOverlay').onclick = () => this.closeCart();
     this.render();
     this.renderCart();
+  },
+
+  /** Tipografías de las portadas de las tiendas. */
+  loadFonts() {
+    if (document.getElementById('sfxFonts')) return;
+    const l = document.createElement('link');
+    l.id = 'sfxFonts';
+    l.rel = 'stylesheet';
+    l.href = 'https://fonts.googleapis.com/css2?family=Anton&family=Archivo:ital,wdth,wght@1,62..125,800..900&family=Bricolage+Grotesque:opsz,wght@12..96,700..800&display=swap';
+    document.head.appendChild(l);
   },
 
   get store() { return Store.currentStore; },
