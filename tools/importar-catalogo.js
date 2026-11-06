@@ -90,6 +90,39 @@ const MAP = {
   }
 };
 
+/* Nombres limpios para la tienda nueva (2026-11-06): algunos de WordPress
+   vienen repetidos o en minúsculas. El nombre original queda en source[].name. */
+const NAMES = {
+  'ath-kit-competitive': 'Athletum Competitive Player Kit',
+  'ath-kit-competitive-gk': 'Athletum Competitive GK Kit',
+  'ath-kit-elite': 'Athletum Elite Player Kit 2026-27',
+  'ath-kit-elite-gk': 'Athletum Elite GK Kit 2026-27',
+  'ath-jer-away': 'Away Jersey',
+  'ath-sho-away': 'Away Short',
+  'ath-gk-jer-green': 'Green GK Jersey',
+  'ath-gk-jer-blue': 'Blue GK Jersey',
+  'ath-gk-sho-green': 'Green GK Short',
+  'ath-gk-sho-blue': 'Blue GK Short',
+  'ath-gk-soc-green': 'Green GK Socks',
+  'ath-gk-soc-blue': 'Blue GK Socks',
+  'ath-polo': 'Black Polo',
+  'ath-gk-jer-orange': 'Competition Orange GK Jersey',
+  'ath-gk-jer-cgreen': 'Competition Green GK Jersey',
+  'gk-sho-orange': 'Competition Orange GK Short',
+  'gk-sho-green': 'Competition Green GK Short',
+  'gk-soc-orange': 'Competition Orange GK Socks',
+  'gk-soc-green': 'Competition Green GK Socks',
+  'lv-jer-official': 'Juventus Official Jersey',
+  'lv-jer-red': 'Away Competitive Red Jersey',
+  'lv-sho-white': 'Competitive White Short',
+  'lv-sho-black': 'Competitive Black Short',
+  'lv-gk-jer-green': 'Competition Green GK Jersey',
+  'lv-gk-jer-orange': 'Competition Orange GK Jersey'
+};
+
+/* Sube cuando se cambian NAMES u otros datos a mano: el equipo los recibe al abrir el panel. */
+const REVISION = 2;
+
 const strip = s => (s || '')
   .replace(/<[^>]+>/g, ' ')
   .replace(/&#8217;/g, '’').replace(/&#8211;/g, '–').replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ')
@@ -176,7 +209,7 @@ const sha = f => crypto.createHash('sha1').update(fs.readFileSync(f)).digest('he
       }
 
       const p = {
-        id: m.key, sku: m.sku, name: src.name.trim(), kind: m.kind,
+        id: m.key, sku: m.sku, name: NAMES[m.key] || src.name.trim(), kind: m.kind,
         categories: m.cats, line: m.line, stores: [store],
         price, sizes: sizes.sort((a, b) => SCALE.indexOf(a) - SCALE.indexOf(b)),
         colorHex: m.hex, image: images[0] || null, images,
@@ -205,6 +238,7 @@ const sha = f => crypto.createHash('sha1').update(fs.readFileSync(f)).digest('he
   const list = [...products.values()];
   const out = {
     importedAt: new Date().toISOString().slice(0, 10),
+    revision: REVISION,
     sources: Object.fromEntries(Object.entries(SOURCES).map(([k, v]) => [k, { name: v.name, site: v.site }])),
     products: list
   };

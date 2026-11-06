@@ -3,6 +3,7 @@
    El stock y los costos NO vienen de aquí (no son públicos). */
 const CATALOG = {
   "importedAt": "2026-10-02",
+  "revision": 2,
   "sources": {
     "athletum": {
       "name": "Athletum FC",
@@ -17,7 +18,7 @@ const CATALOG = {
     {
       "id": "ath-kit-competitive",
       "sku": "ATH-KIT-COMP",
-      "name": "Competitive Athletum Player kit",
+      "name": "Athletum Competitive Player Kit",
       "kind": "kit",
       "categories": [
         "player"
@@ -83,7 +84,7 @@ const CATALOG = {
     {
       "id": "ath-kit-competitive-gk",
       "sku": "ATH-KIT-COMP-GK",
-      "name": "Competitive Athletum GK kit",
+      "name": "Athletum Competitive GK Kit",
       "kind": "kit",
       "categories": [
         "goalkeeper"
@@ -149,7 +150,7 @@ const CATALOG = {
     {
       "id": "ath-kit-elite",
       "sku": "ATH-KIT-ELITE",
-      "name": "Athletum Kit 2026 27",
+      "name": "Athletum Elite Player Kit 2026-27",
       "kind": "kit",
       "categories": [
         "player"
@@ -240,7 +241,7 @@ const CATALOG = {
     {
       "id": "ath-kit-elite-gk",
       "sku": "ATH-KIT-ELITE-GK",
-      "name": "Athletum goalkeeper Kit 2026 27",
+      "name": "Athletum Elite GK Kit 2026-27",
       "kind": "kit",
       "categories": [
         "goalkeeper"
@@ -331,7 +332,7 @@ const CATALOG = {
     {
       "id": "ath-jer-away",
       "sku": "ATH-JER-AWAY",
-      "name": "Away Jersey Practice Jersey",
+      "name": "Away Jersey",
       "kind": "jersey",
       "categories": [
         "player"
@@ -518,7 +519,7 @@ const CATALOG = {
     {
       "id": "ath-gk-jer-green",
       "sku": "ATH-GK-JER-GRN",
-      "name": "Green Jersey GK",
+      "name": "Green GK Jersey",
       "kind": "jersey",
       "categories": [
         "goalkeeper"
@@ -555,7 +556,7 @@ const CATALOG = {
     {
       "id": "ath-gk-jer-blue",
       "sku": "ATH-GK-JER-BLU",
-      "name": "Blue Jersey GK",
+      "name": "Blue GK Jersey",
       "kind": "jersey",
       "categories": [
         "goalkeeper"
@@ -629,7 +630,7 @@ const CATALOG = {
     {
       "id": "ath-sho-away",
       "sku": "ATH-SHO-AWAY",
-      "name": "Away Short Practice Short",
+      "name": "Away Short",
       "kind": "short",
       "categories": [
         "player"
@@ -666,7 +667,7 @@ const CATALOG = {
     {
       "id": "ath-gk-sho-blue",
       "sku": "ATH-GK-SHO-BLU",
-      "name": "Blue Short GK",
+      "name": "Blue GK Short",
       "kind": "short",
       "categories": [
         "goalkeeper"
@@ -703,7 +704,7 @@ const CATALOG = {
     {
       "id": "ath-gk-sho-green",
       "sku": "ATH-GK-SHO-GRN",
-      "name": "Green Short GK",
+      "name": "Green GK Short",
       "kind": "short",
       "categories": [
         "goalkeeper"
@@ -740,7 +741,7 @@ const CATALOG = {
     {
       "id": "ath-gk-soc-green",
       "sku": "ATH-GK-SOC-GRN",
-      "name": "Green Socks GK",
+      "name": "Green GK Socks",
       "kind": "socks",
       "categories": [
         "goalkeeper"
@@ -773,7 +774,7 @@ const CATALOG = {
     {
       "id": "ath-gk-soc-blue",
       "sku": "ATH-GK-SOC-BLU",
-      "name": "Blue Socks GK",
+      "name": "Blue GK Socks",
       "kind": "socks",
       "categories": [
         "goalkeeper"
@@ -923,7 +924,7 @@ const CATALOG = {
     {
       "id": "ath-polo",
       "sku": "ATH-POLO",
-      "name": "Polo Black",
+      "name": "Black Polo",
       "kind": "apparel",
       "categories": [
         "player",
@@ -1107,7 +1108,7 @@ const CATALOG = {
     {
       "id": "ath-gk-jer-orange",
       "sku": "ATH-GK-JER-ORG",
-      "name": "Competition Orange Jersey GK",
+      "name": "Competition Orange GK Jersey",
       "kind": "jersey",
       "categories": [
         "goalkeeper"
@@ -1144,7 +1145,7 @@ const CATALOG = {
     {
       "id": "ath-gk-jer-cgreen",
       "sku": "ATH-GK-JER-CGRN",
-      "name": "Competition Green Jersey GK",
+      "name": "Competition Green GK Jersey",
       "kind": "jersey",
       "categories": [
         "goalkeeper"
@@ -1181,7 +1182,7 @@ const CATALOG = {
     {
       "id": "gk-sho-orange",
       "sku": "GK-SHO-ORG",
-      "name": "Competition Orange Short GK",
+      "name": "Competition Orange GK Short",
       "kind": "short",
       "categories": [
         "goalkeeper"
@@ -1226,7 +1227,7 @@ const CATALOG = {
     {
       "id": "gk-sho-green",
       "sku": "GK-SHO-GRN",
-      "name": "Competition Green Short GK",
+      "name": "Competition Green GK Short",
       "kind": "short",
       "categories": [
         "goalkeeper"
@@ -1271,7 +1272,7 @@ const CATALOG = {
     {
       "id": "gk-soc-orange",
       "sku": "GK-SOC-ORG",
-      "name": "Orange Socks",
+      "name": "Competition Orange GK Socks",
       "kind": "socks",
       "categories": [
         "goalkeeper"
@@ -1311,7 +1312,7 @@ const CATALOG = {
     {
       "id": "gk-soc-green",
       "sku": "GK-SOC-GRN",
-      "name": "Green Socks",
+      "name": "Competition Green GK Socks",
       "kind": "socks",
       "categories": [
         "goalkeeper"
@@ -1483,7 +1484,7 @@ const CATALOG = {
     {
       "id": "lv-jer-official",
       "sku": "LV-JER-OFFICIAL",
-      "name": "Juventus official jersey",
+      "name": "Juventus Official Jersey",
       "kind": "jersey",
       "categories": [
         "player"
@@ -1558,7 +1559,7 @@ const CATALOG = {
     {
       "id": "lv-jer-red",
       "sku": "LV-JER-RED",
-      "name": "Away competitive red jersey",
+      "name": "Away Competitive Red Jersey",
       "kind": "jersey",
       "categories": [
         "player"
@@ -1595,7 +1596,7 @@ const CATALOG = {
     {
       "id": "lv-sho-white",
       "sku": "LV-SHO-WHT",
-      "name": "Competitive white short",
+      "name": "Competitive White Short",
       "kind": "short",
       "categories": [
         "player"
@@ -1632,7 +1633,7 @@ const CATALOG = {
     {
       "id": "lv-sho-black",
       "sku": "LV-SHO-BLK",
-      "name": "Competitive black short",
+      "name": "Competitive Black Short",
       "kind": "short",
       "categories": [
         "player"
@@ -1669,7 +1670,7 @@ const CATALOG = {
     {
       "id": "lv-gk-jer-green",
       "sku": "LV-GK-JER-GRN",
-      "name": "Competition green jersey GK",
+      "name": "Competition Green GK Jersey",
       "kind": "jersey",
       "categories": [
         "goalkeeper"
@@ -1706,7 +1707,7 @@ const CATALOG = {
     {
       "id": "lv-gk-jer-orange",
       "sku": "LV-GK-JER-ORG",
-      "name": "Competition orange jersey GK",
+      "name": "Competition Orange GK Jersey",
       "kind": "jersey",
       "categories": [
         "goalkeeper"

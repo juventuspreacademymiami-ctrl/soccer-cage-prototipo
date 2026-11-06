@@ -24,7 +24,7 @@ const Store = {
 
   /* ---------- Persistencia ---------- */
   versionTag() {
-    return DB_SCHEMA + ':' + (typeof CATALOG !== 'undefined' ? CATALOG.importedAt : '-');
+    return DB_SCHEMA + ':' + (typeof CATALOG !== 'undefined' ? CATALOG.importedAt + (CATALOG.revision ? '.' + CATALOG.revision : '') : '-');
   },
 
   load() {
