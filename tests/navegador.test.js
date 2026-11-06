@@ -543,6 +543,18 @@ scenarios.enlaces = async function (browser) {
     ok(v.sf === id && v.tabs === 0 && v.sw === 'none', `/${id} abre solo su tienda, sin selector ni panel`, v);
     ok(v.theme === temas[id] && await page.locator('.sfx-' + temas[id]).count() === 1, `/${id} tiene su propio diseño de portada (${temas[id]})`, v.theme);
   }
+  // Dos pestañas con tiendas distintas: ninguna se cambia a la tienda de la otra.
+  await page.goto(BASE + 'lasvegas');
+  await page.waitForSelector('.sfx-neon');
+  const otra = await page.context().newPage();
+  await otra.goto(BASE + 'camps');
+  await otra.waitForSelector('.sfx-summer');
+  await otra.evaluate(() => Store.addToCart && Store.save());
+  await page.waitForTimeout(800);
+  ok(await page.evaluate(() => Store.currentStore.id) === 'lasvegas' && await page.locator('.sfx-neon').count() === 1,
+    'con /camps abierta en otra pestaña, /lasvegas sigue en Las Vegas', await page.evaluate(() => Store.currentStore.id));
+  await otra.close();
+
   await page.goto(BASE + 'panel');
   await page.waitForSelector('#appAdmin.active #page-dashboard');
   const p = await page.evaluate(() => ({ panel: App.panelOnly, shop: document.querySelector('#appShop.active') !== null,

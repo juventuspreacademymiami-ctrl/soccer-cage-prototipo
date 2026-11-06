@@ -148,7 +148,7 @@ const App = {
     const wanted = this.hostStore || (this.path && !this.panelOnly ? this.path : null) || new URLSearchParams(location.search).get('store');
     if (wanted && Store.storeCfg(wanted)) {
       this.storefront = wanted;
-      Store.setStore(wanted);
+      Store.pinStore(wanted);
       document.body.classList.add('storefront');
     } else if (this.path && !this.panelOnly) { this.notFound(); return; }
     if (this.panelOnly) document.body.classList.add('panel-only');

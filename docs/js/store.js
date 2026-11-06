@@ -103,7 +103,7 @@ const Store = {
       const mine = Number(this.state.rev || 0);
       if (disk && mine && disk !== mine) {
         const raw = localStorage.getItem(DB_KEY);
-        if (raw) { this.state = JSON.parse(raw); this.state.rev = disk; }
+        if (raw) { this.state = JSON.parse(raw); this.state.rev = disk; this.keepPinnedStore(); }
         if (this.onConflict) this.onConflict();
         return false;
       }
@@ -147,7 +147,7 @@ const Store = {
     const local = this.localPart();
     state.carts = local.carts || {};
     state.session = local.session || null;
-    state.currentStore = local.currentStore || 'camps';
+    state.currentStore = this.pinnedStore || local.currentStore || 'camps';
     state.currentUser = 'u1';
     ['orders', 'customers', 'movements', 'purchases', 'outbox', 'roster', 'programs', 'users'].forEach(k => { if (!Array.isArray(state[k])) state[k] = []; });
     if (!state.users.length) state.users = clone(SEED.users);
@@ -197,6 +197,7 @@ const Store = {
       if (!raw) return false;
       this.state = JSON.parse(raw);
       this.state.rev = disk;
+      this.keepPinnedStore();
       return true;
     } catch (e) {
       return false;
@@ -282,6 +283,17 @@ const Store = {
 
   storeCfg(id) { return this.state.stores.find(s => s.id === id); },
   get currentStore() { return this.storeCfg(this.state.currentStore) || this.state.stores[0]; },
+
+  /* Enlace de una tienda (/lasvegas): la pestaña se queda en esa tienda aunque otra
+     pestaña del mismo sitio haya elegido otra, y cuando llegan datos nuevos. */
+  pinnedStore: null,
+  pinStore(id) {
+    this.pinnedStore = id;
+    this.setStore(id);
+  },
+  keepPinnedStore() {
+    if (this.pinnedStore && this.storeCfg(this.pinnedStore)) this.state.currentStore = this.pinnedStore;
+  },
   setStore(id) {
     if (!this.storeCfg(id)) return;
     this.state.currentStore = id;
