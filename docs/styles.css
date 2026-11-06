@@ -1629,6 +1629,8 @@ table.data tr.sub-row td { padding-top: 5px; padding-bottom: 5px; background: va
   border-radius: 22%; overflow: hidden; font-weight: 800; letter-spacing: -.03em;
 }
 .store-mark img { width: 100%; height: 100%; object-fit: contain; }
+/* Un logo con su propia forma (escudo, círculo) no se recorta. */
+.store-mark:has(> img) { border-radius: 0 !important; overflow: visible; }
 .brand-mark.store-mark { border-radius: 8px; background: transparent !important; }
 
 .btn-brand {
@@ -1870,7 +1872,7 @@ body.sf-home #appShop { background: #0b0b11; min-height: calc(100vh - var(--nav-
 .home-store:focus-visible { outline: 2px solid var(--gold-400); outline-offset: 3px; }
 .home-camps {
   background:
-    radial-gradient(circle at 92% 18%, #2f5bd3 0 38px, transparent 39px),
+    radial-gradient(circle at 78% 92%, #2f5bd3 0 30px, transparent 31px),
     radial-gradient(circle at 104% 92%, #FFB800 0 90px, transparent 91px),
     #0C0A09;
 }
@@ -1881,7 +1883,7 @@ body.sf-home #appShop { background: #0b0b11; min-height: calc(100vh - var(--nav-
 .home-store .home-store-name { font-family: 'Juventus Fans', 'Inter', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: .01em; }
 .home-athletum .home-store-name { font-family: 'Oswald', 'Inter', sans-serif; }
 .home-store-top { display: flex; justify-content: space-between; align-items: flex-start; }
-.home-store .store-mark { width: 64px !important; height: 64px !important; background: transparent !important; }
+.home-store .store-mark { width: 64px !important; height: 64px !important; background: transparent !important; border-radius: 0; overflow: visible; }
 .home-badge { font-size: 11px; font-weight: 750; letter-spacing: .08em; text-transform: uppercase; padding: 5px 10px; border-radius: 999px; background: rgba(127, 127, 127, .22); }
 .home-badge.is-open { background: #16a34a; color: #fff; }
 .home-store-name { font-size: 24px; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; margin-top: auto; max-width: 80%; }
