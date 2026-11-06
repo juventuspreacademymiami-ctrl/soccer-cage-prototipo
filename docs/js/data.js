@@ -27,23 +27,23 @@ SEED.stores = [
     id: 'camps', name: 'Juventus Summer Camps', short: 'Summer Camps', phase: 1, active: true,
     kitRequired: true, taxRate: 0.07,
     pickup: true, shipping: true, shippingFlat: 9.00,
-    brand: '#111111', logo: null, stripeAccount: '', source: null
+    brand: '#FF2850', logo: 'img/marcas/camps-marca.svg', stripeAccount: '', source: null
   },
   {
     id: 'athletum', name: 'Athletum FC', short: 'Athletum', phase: 2, active: false,
     kitRequired: true, taxRate: 0.07,
     pickup: false, shipping: true, shippingFlat: 9.00,
-    brand: '#0b0b0b', logo: null, stripeAccount: '', source: 'https://shop.athletumfc.com'
+    brand: '#F9C349', logo: 'img/marcas/athletum-escudo.png', stripeAccount: '', source: 'https://shop.athletumfc.com'
   },
   {
     id: 'lasvegas', name: 'Juventus Academy Las Vegas', short: 'Las Vegas', phase: 3, active: false,
     kitRequired: true, taxRate: 0.07,
     pickup: false, shipping: true, shippingFlat: 9.00,
-    brand: '#e8174b', logo: null, stripeAccount: '', source: 'https://jacademylasvegas.com/shop/'
+    brand: '#0b0b0c', logo: 'img/marcas/lasvegas-redondo.png', stripeAccount: '', source: 'https://jacademylasvegas.com/shop/'
   }
 ];
 
-SEED.brandPalette = ['#111111', '#e8174b', '#c8102e', '#1e40af', '#0f7b52', '#c9a227', '#6d28d9', '#ea580c'];
+SEED.brandPalette = ['#111111', '#FF2850', '#F9C349', '#A87A2D', '#e8174b', '#c8102e', '#1e40af', '#0f7b52', '#c9a227', '#6d28d9', '#ea580c'];
 
 /* ---------- Catálogos ---------- */
 // Las etiquetas visibles salen de I18N ('cat.player', 'kind.jersey'…).

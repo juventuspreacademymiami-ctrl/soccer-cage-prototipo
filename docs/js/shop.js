@@ -29,7 +29,8 @@ const Shop = {
     const l = document.createElement('link');
     l.id = 'sfxFonts';
     l.rel = 'stylesheet';
-    l.href = 'https://fonts.googleapis.com/css2?family=Anton&family=Archivo:ital,wdth,wght@1,62..125,800..900&family=Bricolage+Grotesque:opsz,wght@12..96,700..800&display=swap';
+    // La fuente de Juventus va en el sitio (fonts/); Oswald es la de los titulares de Athletum.
+    l.href = 'https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&display=swap';
     document.head.appendChild(l);
   },
 
@@ -167,15 +168,28 @@ const Shop = {
     this.renderGrid();
   },
 
-  /* ---------- Portada: un diseño por tienda ----------
-     Verano (claro, con sol), Noche (oscuro, con brillo del color de la marca)
-     y Estadio (negro y dorado). Se elige en el panel; si no, cada tienda trae
-     el suyo. Título, texto y foto de portada salen de la tienda. */
-  THEMES: ['summer', 'neon', 'stadium'],
+  /* ---------- Portada: un diseño por marca ----------
+     Siguen las líneas gráficas de D:\Soccer Cage LLC: Juventus Camps (negro,
+     rojo y dorado), Juventus Academy (blanco y dorado, solo la fuente de
+     Juventus) y Athletum (negro y amarillo, con el toro). Se elige en el panel;
+     si no, cada tienda trae la suya. Título, texto y foto salen de la tienda. */
+  THEMES: ['camps', 'academy', 'athletum'],
+  // Nombres de los primeros diseños, por si alguna tienda quedó guardada con ellos.
+  OLD_THEMES: { summer: 'camps', neon: 'academy', stadium: 'athletum' },
 
   theme(st) {
-    if (st && this.THEMES.includes(st.heroStyle)) return st.heroStyle;
-    return { camps: 'summer', lasvegas: 'neon', athletum: 'stadium' }[st && st.id] || 'summer';
+    const t = st && (this.OLD_THEMES[st.heroStyle] || st.heroStyle);
+    if (this.THEMES.includes(t)) return t;
+    return { camps: 'camps', lasvegas: 'academy', athletum: 'athletum' }[st && st.id] || 'camps';
+  },
+
+  /** Logo oficial de la portada (versión para fondo oscuro). Las demás tiendas usan el logo del panel. */
+  heroBrand(st) {
+    if (st.id === 'lasvegas') return `<img class="sfx-logo" src="img/marcas/lasvegas-blanco.png" alt="${UI.esc(st.name)}">`;
+    if (st.id === 'athletum') return `<img class="sfx-logo sfx-logo-crest" src="img/marcas/athletum-escudo.png" alt="${UI.esc(st.name)}">`;
+    // Camps: la J de juventuscampsusa.com con el nombre en la fuente de Juventus, como en las piezas de la agencia.
+    if (st.id === 'camps') return `<span class="sfx-lockup"><img src="img/marcas/juventus-j-blanca.svg" alt=""><span>${UI.esc(st.name)}</span></span>`;
+    return `<span class="sfx-lockup">${UI.storeMark(st, 56)}<span>${UI.esc(st.name)}</span></span>`;
   },
 
   /** El fondo de toda la página acompaña a la portada. */
@@ -196,7 +210,7 @@ const Shop = {
     // Al lado del texto: la foto de portada si la hay; si no, los productos de la tienda.
     let stage = '';
     if (st.cover) stage = `<img class="sfx-cover" src="${UI.esc(st.cover)}" alt="">`;
-    else if (theme === 'neon') {
+    else if (theme === 'academy') {
       const picks = [...kits, ...singles.filter(p => p.featured), ...singles].filter((p, i, all) => all.indexOf(p) === i).slice(0, 3);
       stage = picks.map((p, i) => `
         <figure class="sfx-card sfx-card-${i + 1}">
@@ -215,7 +229,8 @@ const Shop = {
       <section class="sf-hero sfx sfx-${theme}${soon ? ' is-soon' : ''}">
         <div class="sfx-word" aria-hidden="true">${UI.esc((st.short || st.name).toUpperCase())}</div>
         <div class="sfx-copy">
-          <div class="sfx-eyebrow">${UI.storeMark(st, 26)}<span>${UI.esc(st.name)} · ${I18N.t('shop.official')}</span></div>
+          <div class="sfx-brand">${this.heroBrand(st)}</div>
+          <div class="sfx-eyebrow">${I18N.t('shop.official')}</div>
           <h1${title.length > 34 ? ' class="is-long"' : ''}>${UI.esc(title)}</h1>
           <p>${UI.esc(lead)}</p>
           ${soon ? '' : `<div class="sf-hero-actions">

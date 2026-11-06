@@ -534,7 +534,7 @@ scenarios.enlaces = async function (browser) {
   await page.goto(BASE);
   await page.waitForSelector('.store-tab');
   await page.evaluate(() => Store.stores.forEach(s => Store.saveStore(s.id, { active: true })));
-  const temas = { camps: 'summer', lasvegas: 'neon', athletum: 'stadium' };
+  const temas = { camps: 'camps', lasvegas: 'academy', athletum: 'athletum' };
   for (const id of Object.keys(temas)) {
     await page.goto(BASE + id);
     await page.waitForSelector('.sf-hero');
@@ -545,13 +545,13 @@ scenarios.enlaces = async function (browser) {
   }
   // Dos pestañas con tiendas distintas: ninguna se cambia a la tienda de la otra.
   await page.goto(BASE + 'lasvegas');
-  await page.waitForSelector('.sfx-neon');
+  await page.waitForSelector('.sfx-academy');
   const otra = await page.context().newPage();
   await otra.goto(BASE + 'camps');
-  await otra.waitForSelector('.sfx-summer');
+  await otra.waitForSelector('.sfx-camps');
   await otra.evaluate(() => Store.addToCart && Store.save());
   await page.waitForTimeout(800);
-  ok(await page.evaluate(() => Store.currentStore.id) === 'lasvegas' && await page.locator('.sfx-neon').count() === 1,
+  ok(await page.evaluate(() => Store.currentStore.id) === 'lasvegas' && await page.locator('.sfx-academy').count() === 1,
     'con /camps abierta en otra pestaña, /lasvegas sigue en Las Vegas', await page.evaluate(() => Store.currentStore.id));
   await otra.close();
 
@@ -568,12 +568,14 @@ scenarios.enlaces = async function (browser) {
   await tab.close();
   // El diseño se cambia desde el panel.
   await page.click('[data-edit-store="camps"]');
-  await page.selectOption('#sfHero', 'neon');
+  await page.selectOption('#sfHero', 'athletum');
   await page.click('#sfSave');
-  ok(await page.evaluate(() => Store.storeCfg('camps').heroStyle) === 'neon', 'el diseño de la portada se elige en el panel');
+  ok(await page.evaluate(() => Store.storeCfg('camps').heroStyle) === 'athletum', 'el diseño de la portada se elige en el panel');
   await page.goto(BASE + 'camps');
-  await page.waitForSelector('.sfx-neon');
+  await page.waitForSelector('.sfx-athletum');
   ok(true, 'y la tienda lo usa');
+  ok(await page.evaluate(() => Shop.theme({ id: 'x', heroStyle: 'neon' })) === 'academy', 'un diseño guardado con el nombre viejo se sigue entendiendo');
+  ok(await page.locator('.sfx-brand img').count() === 1, 'la portada lleva el logo oficial');
   await page.goto(BASE + 'no-existe');
   await page.waitForSelector('.sf-missing');
   ok(await page.locator('#appAdmin.active').count() === 0, 'una ruta que no es tienda avisa, sin abrir el panel');

@@ -202,7 +202,7 @@ const { fakeSupabase, newPage, login, API } = require('./fake-supabase');
   ok(new URL(page.url()).pathname === '/camps', 'el enlace viejo ?store=camps lleva a /camps', page.url());
   const leaked = await page.evaluate(() => ({ cost: Store.products.some(p => p.cost !== undefined), orders: Store.orders.length, customers: Store.customers.length }));
   ok(!leaked.cost && leaked.orders === 0 && leaked.customers === 0, 'el visitante no recibe costos, pedidos ni clientes', leaked);
-  ok(await page.locator('.sf-hero h1').innerText() === 'Uniformes del Summer Camp 2027', 'la tienda pública muestra el título editado');
+  ok(await page.locator('.sf-hero h1').textContent() === 'Uniformes del Summer Camp 2027', 'la tienda pública muestra el título editado');
   ok(await page.evaluate(() => [...document.images].some(i => i.src.includes('/storage/v1/object/public/fotos/'))), 'y la foto nueva desde el almacenamiento');
   const stockSeen = await page.evaluate(v => Store.findVariant(v).variant.stock, vid);
   ok(stockSeen === fake.db.state.data.products.find(p => p.id === 'camp-socks').variants.find(v => v.id === vid).stock, 've el stock real del servidor', stockSeen);
